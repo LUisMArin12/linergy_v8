@@ -43,7 +43,6 @@ export default function MapPage() {
   const focusedLineId = searchParams.get('lineId') ?? searchParams.get('lineaId');
   const focusedFaultId = searchParams.get('faultId') ?? searchParams.get('fallaId');
 
-
   // ✅ Helpers: actualizar params sin borrar los existentes (ej. state)
   const setParam = useCallback(
     (key: 'lineId' | 'faultId', value?: string | null) => {
@@ -144,7 +143,7 @@ export default function MapPage() {
     let filtered = allLineas;
 
     if (filters.classifications.length > 0) {
-            const uiToDb = { Alta: 'ALTA', Moderada: 'MODERADA', Baja: 'BAJA' } as const;
+      const uiToDb = { Alta: 'ALTA', Moderada: 'MODERADA', Baja: 'BAJA' } as const;
       const selected = new Set(filters.classifications.map((c) => uiToDb[c]));
       filtered = filtered.filter((l) => selected.has(l.clasificacion));
     }
@@ -172,7 +171,7 @@ export default function MapPage() {
     let filtered = allFallas.filter((f: Falla) => lineaIds.includes(f.linea_id));
 
     if (filters.statuses.length > 0) {
-            const uiToDb = { Abierta: 'ABIERTA', 'En atención': 'EN_ATENCION', Cerrada: 'CERRADA' } as const;
+      const uiToDb = { Abierta: 'ABIERTA', 'En atención': 'EN_ATENCION', Cerrada: 'CERRADA' } as const;
       const selected = new Set(filters.statuses.map((s) => uiToDb[s]));
       filtered = filtered.filter((f) => selected.has(f.estado));
     }
@@ -262,7 +261,7 @@ export default function MapPage() {
 
   if (lineasLoading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
+      <div className="flex items-center justify-center h-[calc(100dvh-8rem)]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#157A5A] mx-auto mb-4"></div>
           <p className="text-[#6B7280]">Cargando datos...</p>
@@ -273,7 +272,7 @@ export default function MapPage() {
 
   if (lineasError) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
+      <div className="flex items-center justify-center h-[calc(100dvh-8rem)]">
         <div className="text-center">
           <p className="text-red-600 mb-2">Error al cargar los datos</p>
           <p className="text-sm text-[#6B7280]">{String(lineasError)}</p>
@@ -283,23 +282,16 @@ export default function MapPage() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-[calc(100vh-8rem)]">
-      {/*
-        Panel izquierdo (Mobile-first):
-        - En móvil limitamos altura para dejar espacio al mapa.
-        - El scroll debe aplicarse al panel COMPLETO (incluye filtros), no solo a resultados.
-          Esto evita que el bloque "Visibilidad" quede inaccesible en pantallas pequeñas.
-      */}
-      <div
-        className={
-          `w-full lg:w-80 flex flex-col gap-4 min-h-0 ` +
-          `${showLineResults ? 'max-h-[40vh]' : 'max-h-[28vh]'} lg:max-h-none ` +
-          `overflow-y-auto`
-        }
-      >
-        {!focusedLineId && <MapFilters onFiltersChange={setFilters} />}
+    // ✅ dvh: evita cortes por barras del navegador en iOS/Android
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-[calc(100dvh-8rem)] min-h-0">
+      {/* Panel izquierdo */}
+      <div className="w-full lg:w-80 flex flex-col min-h-0">
+        {/* ✅ Scroll único para: filtros + resultados (sin scroll anidado) */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-1 [-webkit-overflow-scrolling:touch] space-y-4">
+          {/* Filtros arriba */}
+          {!focusedLineId && <MapFilters onFiltersChange={setFilters} />}
 
-        <div className="flex-1 min-h-0">
+          {/* Resultados */}
           <ItemsList
             estructuras={filteredEstructuras}
             fallas={filteredFallas}
@@ -322,10 +314,7 @@ export default function MapPage() {
             <p className="text-sm text-[#111827]">
               Línea no encontrada para <span className="font-mono">{focusedLineId}</span>
             </p>
-            <button
-              className="mt-1 text-sm text-[#157A5A] hover:underline"
-              onClick={handleExitFocus}
-            >
+            <button className="mt-1 text-sm text-[#157A5A] hover:underline" onClick={handleExitFocus}>
               Salir de foco
             </button>
           </div>

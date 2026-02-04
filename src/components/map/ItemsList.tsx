@@ -41,7 +41,8 @@ export default function ItemsList({
   const lineasMap = useMemo(() => new Map(lineas.map((l) => [l.id, l])), [lineas]);
 
   return (
-    <div className="space-y-3">
+    // ✅ padding inferior para evitar corte en móviles
+    <div className="space-y-3 pb-6">
       <div className="flex items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-[#111827]">Resultados</h3>
@@ -58,11 +59,7 @@ export default function ItemsList({
           aria-label={showLineas ? 'Ocultar resultados de líneas' : 'Mostrar resultados de líneas'}
           title={showLineas ? 'Ocultar líneas' : 'Mostrar líneas'}
         >
-          {showLineas ? (
-            <EyeOff className="w-4 h-4 text-[#6B7280]" />
-          ) : (
-            <Eye className="w-4 h-4 text-[#6B7280]" />
-          )}
+          {showLineas ? <EyeOff className="w-4 h-4 text-[#6B7280]" /> : <Eye className="w-4 h-4 text-[#6B7280]" />}
           <span className="text-xs font-medium text-[#111827]">
             Líneas
             <span className="text-[#6B7280] font-normal"> ({lineas.length})</span>
@@ -81,35 +78,35 @@ export default function ItemsList({
         <div className="space-y-3">
           {showLineas ? (
             lineas.map((linea) => (
-            <Card
-              key={linea.id}
-              hover
-              clickable
-              onClick={() => onSelectLinea?.(linea.id)}
-              className="p-4 cursor-pointer"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-[#FFE5FF] rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Route className="w-4 h-4 text-[#FF00FF]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <p className="font-semibold text-[#111827] truncate">{linea.numero}</p>
-                    <Badge variant="classification" classification={linea.clasificacion}>
-                      {linea.clasificacion}
-                    </Badge>
+              <Card
+                key={linea.id}
+                hover
+                clickable
+                onClick={() => onSelectLinea?.(linea.id)}
+                className="p-4 cursor-pointer"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-[#FFE5FF] rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Route className="w-4 h-4 text-[#FF00FF]" />
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="font-semibold text-[#111827] truncate">{linea.numero}</p>
+                      <Badge variant="classification" classification={linea.clasificacion}>
+                        {linea.clasificacion}
+                      </Badge>
+                    </div>
 
-                  {linea.nombre && <p className="text-sm text-[#6B7280] truncate">{linea.nombre}</p>}
+                    {linea.nombre && <p className="text-sm text-[#6B7280] truncate">{linea.nombre}</p>}
 
-                  {linea.km_inicio !== null && linea.km_fin !== null && (
-                    <p className="text-xs text-[#6B7280] mt-1">
-                      {fmtKm(linea.km_inicio)} - {fmtKm(linea.km_fin)} km
-                    </p>
-                  )}
+                    {linea.km_inicio !== null && linea.km_fin !== null && (
+                      <p className="text-xs text-[#6B7280] mt-1">
+                        {fmtKm(linea.km_inicio)} - {fmtKm(linea.km_fin)} km
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
             ))
           ) : (
             <div className="bg-white rounded-xl border border-[#E5E7EB] p-3">
