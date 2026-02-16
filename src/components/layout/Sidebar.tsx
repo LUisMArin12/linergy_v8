@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Map, FileText, Info, Cable, UploadCloud, LogOut, X } from 'lucide-react';
 import clsx from 'clsx';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -15,22 +16,23 @@ const menuItems = [
   {
     section: 'Operación',
     items: [
-      { to: '/dashboard/mapa', icon: Map, label: 'Mapa' },
-      { to: '/dashboard/reportes', icon: FileText, label: 'Reportes' },
+      { to: '/dashboard/mapa', icon: Map, label: 'Mapa', adminOnly: false },
+      { to: '/dashboard/reportes', icon: FileText, label: 'Reportes', adminOnly: false },
     ],
   },
   {
     section: 'Administración',
     items: [
-      { to: '/dashboard/info-lineas', icon: Info, label: 'Información Líneas' },
-      { to: '/dashboard/admin/lineas', icon: Cable, label: 'Líneas' },
-      { to: '/dashboard/admin/importar', icon: UploadCloud, label: 'Importar KMZ' },
+      { to: '/dashboard/info-lineas', icon: Info, label: 'Información Líneas', adminOnly: false },
+      { to: '/dashboard/admin/lineas', icon: Cable, label: 'Líneas', adminOnly: true },
+      { to: '/dashboard/admin/importar', icon: UploadCloud, label: 'Importar KMZ', adminOnly: true },
     ],
   },
 ];
 
 function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -56,15 +58,19 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4">
-        {menuItems.map((section) => (
-          <div key={section.section} className="mb-6">
-            {!collapsed && (
-              <p className="px-4 mb-2 text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
-                {section.section}
-              </p>
-            )}
-            <div className="space-y-1 px-2">
-              {section.items.map((item) => (
+        {menuItems.map((section) => {
+          const visibleItems = section.items.filter(item => !item.adminOnly || isAdmin);
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={section.section} className="mb-6">
+              {!collapsed && (
+                <p className="px-4 mb-2 text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+                  {section.section}
+                </p>
+              )}
+              <div className="space-y-1 px-2">
+                {visibleItems.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -93,10 +99,11 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
                     </>
                   )}
                 </NavLink>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
       <div className="border-t border-[#E5E7EB] p-4">

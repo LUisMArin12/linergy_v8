@@ -16,16 +16,18 @@ import ShareModal from './components/modals/ShareModal';
 import { ToastProvider } from './contexts/ToastContext';
 import { SearchProvider } from './contexts/SearchContext';
 import { MapFocusProvider } from './contexts/MapFocusContext';
+import { AuthProvider } from './contexts/AuthContext';
 
 export default function App() {
   const [showShare, setShowShare] = useState(false);
 
   return (
     <BrowserRouter>
-      <ToastProvider>
-        <SearchProvider>
-          {/*  MapFocusProvider DEBE estar dentro del Router */}
-          <MapFocusProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <SearchProvider>
+            {/*  MapFocusProvider DEBE estar dentro del Router */}
+            <MapFocusProvider>
             <Suspense fallback={<div className="p-6 text-sm text-[#6B7280]">Cargando…</div>}>
             <Routes>
               <Route path="/" element={<WelcomePage />} />
@@ -50,6 +52,7 @@ export default function App() {
           </MapFocusProvider>
         </SearchProvider>
       </ToastProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

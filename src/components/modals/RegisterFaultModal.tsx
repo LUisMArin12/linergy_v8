@@ -9,6 +9,7 @@ import Button from '../ui/Button';
 import { supabase, computeFaultLocation } from '../../lib/supabase';
 import { useToast } from '../../contexts/ToastContext';
 import { useMapFocus } from '../../contexts/MapFocusContext';
+import { useAuth } from '../../contexts/AuthContext';
 import FaultReportModal from './FaultReportModal';
 
 interface FaultFormData {
@@ -44,6 +45,7 @@ export default function RegisterFaultModal() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { isRegisterFaultOpen, setIsRegisterFaultOpen } = useMapFocus();
+  const { isAdmin } = useAuth();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const focusedLineId = searchParams.get('lineId'); // foco por URL (fuente de verdad)
@@ -219,6 +221,21 @@ export default function RegisterFaultModal() {
     setShowReportModal(false);
     setResult(null);
   };
+
+  if (!isAdmin && isRegisterFaultOpen) {
+    return (
+      <Modal isOpen={isRegisterFaultOpen} onClose={handleClose} title="Acceso Denegado" size="md">
+        <div className="text-center py-6">
+          <p className="text-[#6B7280] mb-4">
+            Solo los administradores pueden registrar fallas.
+          </p>
+          <Button variant="secondary" onClick={handleClose}>
+            Cerrar
+          </Button>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <>

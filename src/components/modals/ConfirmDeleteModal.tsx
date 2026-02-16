@@ -1,6 +1,7 @@
 import { AlertTriangle } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean;
@@ -19,6 +20,23 @@ export default function ConfirmDeleteModal({
   message,
   isDeleting = false,
 }: ConfirmDeleteModalProps) {
+  const { isAdmin } = useAuth();
+
+  if (!isAdmin) {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} title="Acceso Denegado" size="md">
+        <div className="text-center py-6">
+          <p className="text-[#6B7280] mb-4">
+            Solo los administradores pueden eliminar elementos.
+          </p>
+          <Button variant="secondary" onClick={onClose}>
+            Cerrar
+          </Button>
+        </div>
+      </Modal>
+    );
+  }
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="md">
       <div className="space-y-6">

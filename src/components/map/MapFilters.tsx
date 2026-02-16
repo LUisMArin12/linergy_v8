@@ -9,7 +9,6 @@ import { Classification, FaultStatus } from '../../types';
 export interface FilterState {
   classifications: Classification[];
   statuses: FaultStatus[];
-  showStructures: boolean;
   showFaults: boolean;
 }
 
@@ -24,7 +23,6 @@ export default function MapFilters({ onFiltersChange }: MapFiltersProps) {
   const [filters, setFilters] = useState<FilterState>({
     classifications: [],
     statuses: [],
-    showStructures: false,
     showFaults: false,
   });
 
@@ -59,7 +57,6 @@ export default function MapFilters({ onFiltersChange }: MapFiltersProps) {
     setFilters({
       classifications: [],
       statuses: [],
-      showStructures: false,
       showFaults: false,
     });
   };
@@ -155,18 +152,6 @@ export default function MapFilters({ onFiltersChange }: MapFiltersProps) {
                 </label>
 
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      checked={filters.showStructures}
-                      onChange={(e) => updateFilters({ showStructures: e.target.checked })}
-                      className="w-4 h-4 text-[#157A5A] rounded focus:ring-[#157A5A]"
-                    />
-                    <span className="text-sm text-[#111827] group-hover:text-[#157A5A] transition-colors">
-                      Estructuras
-                    </span>
-                  </label>
-
                   <label className="flex items-center gap-2 cursor-pointer group">
                     <input
                       type="checkbox"

@@ -8,6 +8,7 @@ import Select from '../ui/Select';
 import Button from '../ui/Button';
 import { Linea,  supabase, updateFalla, Falla } from '../../lib/supabase';
 import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface EditFaultModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ interface EditFormData {
 export default function EditFaultModal({ isOpen, onClose, falla }: EditFaultModalProps) {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { isAdmin } = useAuth();
 
   const [formData, setFormData] = useState<EditFormData>({
     lineaId: falla.linea_id,
@@ -109,6 +111,21 @@ export default function EditFaultModal({ isOpen, onClose, falla }: EditFaultModa
     updateFallaMutation.reset();
     onClose();
   };
+
+  if (!isAdmin) {
+    return (
+      <Modal isOpen={isOpen} onClose={handleClose} title="Acceso Denegado" size="md">
+        <div className="text-center py-6">
+          <p className="text-[#6B7280] mb-4">
+            Solo los administradores pueden editar fallas.
+          </p>
+          <Button variant="secondary" onClick={handleClose}>
+            Cerrar
+          </Button>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Editar Falla" size="lg">

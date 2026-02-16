@@ -23,6 +23,7 @@ import {
   deleteFalla,
 } from '../../lib/supabase';
 import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../contexts/AuthContext';
 import EditFaultModal from '../modals/EditFaultModal';
 import ConfirmDeleteModal from '../modals/ConfirmDeleteModal';
 import ShareModal from '../modals/ShareModal';
@@ -58,6 +59,7 @@ function isValidLatLon(lat: unknown, lon: unknown): lat is number {
 export default function DetailPanel({ item, type, onClose, onCenterMap }: DetailPanelProps) {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { isAdmin } = useAuth();
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -331,24 +333,28 @@ export default function DetailPanel({ item, type, onClose, onCenterMap }: Detail
               </div>
 
               <div className="pt-4 border-t border-[#E5E7EB] space-y-2">
-                <Button
-                  variant="primary"
-                  icon={<Edit2 className="w-4 h-4" />}
-                  onClick={() => setShowEditModal(true)}
-                  className="w-full"
-                >
-                  Editar falla
-                </Button>
+                {isAdmin && (
+                  <>
+                    <Button
+                      variant="primary"
+                      icon={<Edit2 className="w-4 h-4" />}
+                      onClick={() => setShowEditModal(true)}
+                      className="w-full"
+                    >
+                      Editar falla
+                    </Button>
 
-                <Button
-                  variant="secondary"
-                  icon={<CheckCircle className="w-4 h-4" />}
-                  onClick={handleChangeStatus}
-                  className="w-full"
-                  disabled={changeStatusMutation.isPending}
-                >
-                  {changeStatusMutation.isPending ? 'Actualizando...' : statusCta}
-                </Button>
+                    <Button
+                      variant="secondary"
+                      icon={<CheckCircle className="w-4 h-4" />}
+                      onClick={handleChangeStatus}
+                      className="w-full"
+                      disabled={changeStatusMutation.isPending}
+                    >
+                      {changeStatusMutation.isPending ? 'Actualizando...' : statusCta}
+                    </Button>
+                  </>
+                )}
 
                 <Button
                   variant="secondary"
@@ -370,14 +376,16 @@ export default function DetailPanel({ item, type, onClose, onCenterMap }: Detail
                   Navegar
                 </Button>
 
-                <Button
-                  variant="secondary"
-                  icon={<Trash2 className="w-4 h-4" />}
-                  onClick={() => setShowDeleteModal(true)}
-                  className="w-full text-red-600 hover:bg-red-50"
-                >
-                  Eliminar falla
-                </Button>
+                {isAdmin && (
+                  <Button
+                    variant="secondary"
+                    icon={<Trash2 className="w-4 h-4" />}
+                    onClick={() => setShowDeleteModal(true)}
+                    className="w-full text-red-600 hover:bg-red-50"
+                  >
+                    Eliminar falla
+                  </Button>
+                )}
               </div>
             </div>
           )}

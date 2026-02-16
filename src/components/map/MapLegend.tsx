@@ -36,18 +36,6 @@ export default function MapLegend() {
               <p className="text-[10px] font-medium text-[#6B7280]">Infraestructura</p>
 
               <div className="flex items-center gap-2">
-                <div
-                  className="w-3.5 h-3.5 rounded-full flex-shrink-0"
-                  style={{
-                    background: '#3B82F6',
-                    border: '2px solid white',
-                    boxShadow: '0 0 0 1px #E5E7EB',
-                  }}
-                />
-                <span className="text-[11px] text-[#111827]">Estructura</span>
-              </div>
-
-              <div className="flex items-center gap-2">
                 <div className="w-5 h-0.5 bg-[#FF00FF] flex-shrink-0" />
                 <span className="text-[11px] text-[#111827]">Línea</span>
               </div>

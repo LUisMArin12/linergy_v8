@@ -291,7 +291,10 @@ export async function updateFalla(fallaId: string, payload: UpdateFallaPayload) 
 }
 
 export async function deleteFalla(fallaId: string) {
-  const { error } = await supabase.from('fallas').delete().eq('id', fallaId);
+  const { error } = await supabase
+    .from('fallas')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', fallaId);
   if (error) throw error;
 }
 
