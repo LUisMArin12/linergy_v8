@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { findLineaCatalogEntry, formatLineaCatalogEntryLines } from './lineaCatalog';
 import { Falla, Linea, parseGeometry } from './supabase';
 
 export type FaultForReport = Pick<
@@ -25,9 +26,11 @@ function isValidLatLon(lat: unknown, lon: unknown): lat is number {
 }
 
 export function generateFaultPDF(falla: FaultForReport, linea: LineForReport) {
-  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  type JsPDFWithLink = jsPDF & { textWithLink?: (text: string, x: number, y: number, options: { url: string }) => void };
 
-  // Page layout
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' }) as JsPDFWithLink;
+
+// Page layout
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 44;
@@ -252,6 +255,90 @@ export function generateFaultPDF(falla: FaultForReport, linea: LineForReport) {
     );
   }
 
+
+  // Características de la línea (catálogo)
+  {
+    const entry = findLineaCatalogEntry(linea?.numero ?? linea?.nombre ?? null);
+    if (entry) {
+      // Render en tabla 2 columnas (más organizado que lista)
+      const items: Array<[string, string]> = [
+        ['Clave enlace', entry.clave_enlace],
+        ['Descripción', entry.descripcion],
+        ['Área', String(entry.area ?? 'N/A')],
+        ['Tensión', entry.tension],
+        ['Kms', String(entry.kms ?? 'N/A')],
+        ['NC', String(entry.nc ?? 'N/A')],
+        ['Conductor', entry.conductor],
+        ['Tip. Estruc', entry.tip_estruc],
+        ['# Est', String(entry.num_est ?? 'N/A')],
+        ['Año', String(entry.anio ?? 'N/A')],
+        ['Comp', entry.comp],
+        ['Cve SAP', entry.cve_sap],
+        ['Brecha', String(entry.brecha ?? 'N/A')],
+        ['Conf. cond', entry.conf_cond],
+        ['Pob', entry.pob],
+        ['Ent', entry.ent],
+      ];
+
+      // altura dinámica aproximada
+      const rowH = 36;
+      const rows = Math.ceil(items.length / 2);
+      const h = Math.min(340, Math.max(140, 68 + rows * rowH));
+
+      const c = card(h);
+      sectionTitle(c.x, c.y, 'Características de la línea');
+
+      const gridX = c.x;
+      let yy = c.y + 26;
+      const colGap = 16;
+      const colW = (c.w - colGap) / 2;
+
+      // separador superior sutil
+      setDraw(C.line);
+      doc.setLineWidth(1);
+      doc.line(gridX, yy - 10, gridX + c.w, yy - 10);
+
+      for (let r = 0; r < rows; r++) {
+        const left = items[r * 2];
+        const right = items[r * 2 + 1];
+
+        const renderCell = (cx: number, cy: number, label: string, value: string) => {
+          // label
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8.2);
+          setRGB(C.muted);
+          doc.text(label.toUpperCase(), cx, cy);
+
+          // value
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10.2);
+          setRGB(C.text);
+
+          const v = (value ?? '').toString().trim() || 'N/A';
+          const lines = doc.splitTextToSize(v, colW);
+          doc.text(lines, cx, cy + 14);
+        };
+
+        // row background alterno (minimal)
+        if (r % 2 === 0) {
+          setFill(C.card);
+          doc.setFillColor(252, 252, 252);
+          doc.rect(margin + 18, yy - 14, contentW - 36, rowH, 'F');
+        }
+
+        if (left) renderCell(gridX, yy, left[0], left[1] ?? 'N/A');
+        if (right) renderCell(gridX + colW + colGap, yy, right[0], right[1] ?? 'N/A');
+
+        // separador de fila
+        setDraw(C.line);
+        doc.setLineWidth(1);
+        doc.line(gridX, yy + rowH - 14, gridX + c.w, yy + rowH - 14);
+
+        yy += rowH;
+      }
+    }
+  }
+
   // Descripción
   {
     const text = falla.descripcion?.trim() || 'Sin descripción adicional.';
@@ -276,7 +363,21 @@ export function generateFaultPDF(falla: FaultForReport, linea: LineForReport) {
     yy = kvRow(c.x, yy, 'Coordenadas (lat, lon)', coordsText, c.w);
 
     if (mapsUrl) {
-      kvRow(c.x, yy, 'Google Maps', mapsUrl, c.w);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      setRGB(C.muted);
+      doc.text('GOOGLE MAPS', c.x, yy + 2);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10.5);
+      setRGB(C.brand);
+      // Link clickeable (si jsPDF soporta textWithLink)
+      if (typeof doc.textWithLink === 'function') {
+        doc.textWithLink(mapsUrl, c.x, yy + 18, { url: mapsUrl });
+      } else {
+        doc.text(mapsUrl, c.x, yy + 18);
+      }
+      setRGB(C.text);
     }
   }
 
@@ -344,6 +445,12 @@ function generateFaultText(falla: FaultForReport, linea: LineForReport): string 
 
 Folio: ${falla.id.slice(0, 8).toUpperCase()}
 Línea: ${linea?.numero || 'N/A'}${linea?.nombre ? ` - ${linea.nombre}` : ''}
+${(() => {
+  const entry = findLineaCatalogEntry(linea?.numero ?? linea?.nombre ?? null);
+  if (!entry) return '';
+  const lines = formatLineaCatalogEntryLines(entry);
+  return `\nCARACTERÍSTICAS DE LA LÍNEA:\n${lines.join('\n')}\n`;
+})()}
 Kilómetro: ${Number.isFinite(falla.km) ? falla.km.toFixed(1) : 'N/A'} km
 Tipo de falla: ${falla.tipo}
 Estado: ${estadoText}

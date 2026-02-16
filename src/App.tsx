@@ -9,6 +9,7 @@ const MapPage = lazy(() => import('./pages/MapPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const AdminLinesPage = lazy(() => import('./pages/AdminLinesPage'));
 const AdminImportPage = lazy(() => import('./pages/AdminImportPage'));
+const InfoLineasPage = lazy(() => import('./pages/InfoLineasPage'));
 
 import RegisterFaultModal from './components/modals/RegisterFaultModal';
 import ShareModal from './components/modals/ShareModal';
@@ -33,6 +34,7 @@ export default function App() {
                 <Route index element={<Navigate to="/dashboard/mapa" replace />} />
                 <Route path="mapa" element={<MapPage />} />
                 <Route path="reportes" element={<ReportsPage />} />
+                <Route path="info-lineas" element={<InfoLineasPage />} />
                 <Route path="admin/lineas" element={<AdminLinesPage />} />
                 <Route path="admin/importar" element={<AdminImportPage />} />
               </Route>

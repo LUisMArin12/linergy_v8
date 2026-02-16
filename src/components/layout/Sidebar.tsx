@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Map, Cable, UploadCloud, FileText, LogOut, X } from 'lucide-react';
+import { Map, FileText, Info, Cable, UploadCloud, LogOut, X } from 'lucide-react';
 import clsx from 'clsx';
 import { supabase } from '../../lib/supabase';
 
@@ -22,6 +22,7 @@ const menuItems = [
   {
     section: 'Administración',
     items: [
+      { to: '/dashboard/info-lineas', icon: Info, label: 'Información Líneas' },
       { to: '/dashboard/admin/lineas', icon: Cable, label: 'Líneas' },
       { to: '/dashboard/admin/importar', icon: UploadCloud, label: 'Importar KMZ' },
     ],

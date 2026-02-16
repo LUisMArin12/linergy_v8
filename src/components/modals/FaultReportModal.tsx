@@ -75,48 +75,52 @@ export default function FaultReportModal({ isOpen, onClose, faultData }: FaultRe
       minute: '2-digit',
     });
 
-    const ubicacionBlock = hasValidCoords
-      ? `Coordenadas: ${coordsText}
-Google Maps: ${googleMapsUrl}`
-      : `Coordenadas: N/A
-Google Maps: N/A`;
+    const folio = faultData.fallaId.slice(0, 8).toUpperCase();
 
-    return `
-═══════════════════════════════════════
-          REPORTE DE FALLA - Linergy
-═══════════════════════════════════════
+    const ocurrenciaDate = new Date(faultData.fecha);
+    const fechaOcurrencia = ocurrenciaDate.toLocaleDateString('es-MX', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
 
-ID DE FALLA: ${faultData.fallaId}
+    const header = `LINERGY – REPORTE DE FALLA
+────────────────────────────────────────────`;
 
-─────────────────────────────────────
-INFORMACIÓN DE LA LÍNEA
-─────────────────────────────────────
-Línea: ${faultData.lineaNumero}${faultData.lineaNombre ? ` - ${faultData.lineaNombre}` : ''}
-Kilómetro: ${faultData.km} km
+    const rows: Array<[string, string, string]> = [
+      ['GENERAL', 'Sistema', 'Linergy'],
+      ['GENERAL', 'Folio', folio],
+      ['GENERAL', 'Estado', String(faultData.estado || '').toUpperCase()],
+      ['GENERAL', 'Generado', `${fechaGeneracion} · ${horaGeneracion}`],
 
-─────────────────────────────────────
-DETALLES DE LA FALLA
-─────────────────────────────────────
-Tipo: ${faultData.tipo}
-Estado: ${faultData.estado}
-Fecha de ocurrencia: ${new Date(faultData.fecha).toLocaleDateString('es-MX')}
-Hora de ocurrencia: ${faultData.hora}
-${faultData.descripcion ? `Descripción: ${faultData.descripcion}` : 'Sin descripción adicional'}
+      ['LÍNEA', 'Línea', `${faultData.lineaNumero}${faultData.lineaNombre ? ` — ${faultData.lineaNombre}` : ''}`],
+      ['LÍNEA', 'Kilómetro', `${Number.isFinite(faultData.km) ? faultData.km.toFixed(1) : faultData.km} km`],
 
-─────────────────────────────────────
-UBICACIÓN
-─────────────────────────────────────
-${ubicacionBlock}
+      ['FALLA', 'Tipo', faultData.tipo || 'N/A'],
+      ['FALLA', 'Fecha', fechaOcurrencia],
+      ['FALLA', 'Hora', faultData.hora || 'N/A'],
+      ['FALLA', 'Descripción', faultData.descripcion?.trim() ? faultData.descripcion.trim() : 'Sin descripción adicional'],
 
-─────────────────────────────────────
-INFORMACIÓN DEL REPORTE
-─────────────────────────────────────
-Generado: ${fechaGeneracion} a las ${horaGeneracion}
-Sistema: Linergy - Sistema de Gestión de Líneas
+      ['UBICACIÓN', 'Coordenadas', hasValidCoords ? coordsText : 'N/A'],
+      ['UBICACIÓN', 'Google Maps', googleMapsUrl ?? 'N/A'],
+    ];
 
-═══════════════════════════════════════
-`.trim();
-  };
+    const col1 = 10; // SECCIÓN
+    const col2 = 16; // CAMPO
+
+    const pad = (s: string, n: number) => (s.length >= n ? s.slice(0, n) : s + ' '.repeat(n - s.length));
+    const sep = `${'─'.repeat(col1)}┼${'─'.repeat(col2)}┼${'─'.repeat(36)}`;
+
+    const lines = [
+      header,
+      '',
+      `${pad('SECCIÓN', col1)}│${pad('CAMPO', col2)}│ VALOR`,
+      sep,
+      ...rows.map(([sec, campo, val]) => `${pad(sec, col1)}│${pad(campo, col2)}│ ${val}`),
+    ];
+
+    return lines.join('\n');
+};
 
   const handleCopyReport = () => {
     const reportText = generateReportText();
@@ -143,7 +147,10 @@ Sistema: Linergy - Sistema de Gestión de Líneas
       tipo: faultData.tipo,
       descripcion: faultData.descripcion,
       estado: normalizeEstadoToDbEnum(faultData.estado),
-      // geom no viene aquí; si generateFaultPDF lo requiere, deberá manejar ausencia.
+      geom:
+        hasValidCoords && faultData.lat !== null && faultData.lon !== null
+          ? `POINT(${faultData.lon} ${faultData.lat})`
+          : null,
     };
 
     const linea = {
