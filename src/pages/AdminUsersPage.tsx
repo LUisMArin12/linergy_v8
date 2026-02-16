@@ -17,17 +17,25 @@ type UserWithProfile = {
 };
 
 export default function AdminUsersPage() {
+  console.log('AdminUsersPage rendering...');
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const [roleChanges, setRoleChanges] = useState<Record<string, 'admin' | 'user'>>({});
 
-  const { data: users, isLoading, error } = useQuery({
+  const { data: users, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
+      console.log('Fetching users...');
       const { data, error } = await supabase.rpc('get_all_users_with_profiles');
-      if (error) throw error;
+      console.log('Response:', { data, error });
+      if (error) {
+        console.error('Error fetching users:', error);
+        throw error;
+      }
+      console.log('Users loaded:', data);
       return data as UserWithProfile[];
     },
+    retry: false,
   });
 
   const updateRoleMutation = useMutation({
@@ -79,11 +87,13 @@ export default function AdminUsersPage() {
   };
 
   if (isLoading) {
+    console.log('Rendering loading state...');
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
             <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
+            <p className="text-sm text-gray-600">Cargando usuarios...</p>
           </div>
         </div>
       </div>
@@ -91,19 +101,31 @@ export default function AdminUsersPage() {
   }
 
   if (error) {
+    console.error('Rendering error state:', error);
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-6xl mx-auto">
           <Card className="p-6">
             <div className="text-center text-red-600">
               <p className="font-semibold mb-2">Error al cargar usuarios</p>
-              <p className="text-sm">{(error as Error).message}</p>
+              <p className="text-sm">{error instanceof Error ? error.message : String(error)}</p>
+              <Button onClick={() => refetch()} className="mt-4">
+                Reintentar
+              </Button>
+              <details className="mt-4 text-left">
+                <summary className="cursor-pointer text-xs">Ver detalles técnicos</summary>
+                <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">
+                  {JSON.stringify(error, null, 2)}
+                </pre>
+              </details>
             </div>
           </Card>
         </div>
       </div>
     );
   }
+
+  console.log('Rendering main content. Users:', users, 'Loading:', isLoading, 'Error:', error);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -115,6 +137,9 @@ export default function AdminUsersPage() {
           </div>
           <p className="text-gray-600">
             Gestiona los roles y permisos de los usuarios del sistema
+          </p>
+          <p className="text-xs text-gray-400 mt-2">
+            Debug: {users ? `${users.length} usuarios` : 'Sin datos'} | Loading: {isLoading ? 'Sí' : 'No'} | Error: {error ? 'Sí' : 'No'}
           </p>
         </div>
 
