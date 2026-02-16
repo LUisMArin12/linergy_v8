@@ -5,12 +5,13 @@ export async function handleAuthError(error: unknown): Promise<void> {
 
   const errorMessage = error instanceof Error ? error.message : String(error);
 
+  // Only treat as auth error if it's specifically about JWT/token expiration
+  // NOT for general 401 errors which could come from Edge Functions
   const isAuthError =
-    errorMessage.includes('JWT') ||
-    errorMessage.includes('Invalid token') ||
+    (errorMessage.includes('JWT') && errorMessage.includes('expired')) ||
     errorMessage.includes('refresh_token_not_found') ||
     errorMessage.includes('invalid_grant') ||
-    errorMessage.toLowerCase().includes('unauthorized');
+    (errorMessage.includes('JWT') && errorMessage.includes('invalid'));
 
   if (isAuthError) {
     console.warn('Auth error detected, signing out:', errorMessage);

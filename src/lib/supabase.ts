@@ -167,21 +167,18 @@ export async function computeFaultLocation(
   lineaId: string,
   km: number
 ): Promise<{ lat: number; lon: number }> {
-  try {
-    const headers = await buildFunctionHeaders(true);
+  const headers = await buildFunctionHeaders(true);
 
-    const response = await fetch(`${supabaseUrl}/functions/v1/compute-fault-location`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ lineaId, km }),
-    });
+  const response = await fetch(`${supabaseUrl}/functions/v1/compute-fault-location`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ lineaId, km }),
+  });
 
-    if (!response.ok) {
-      const msg = await parseFetchError(response);
-      const error = new Error(msg || 'Failed to compute location');
-      await handleAuthError(error);
-      throw error;
-    }
+  if (!response.ok) {
+    const msg = await parseFetchError(response);
+    throw new Error(msg || 'Failed to compute location');
+  }
 
   const payload: unknown = await response.json();
 
@@ -242,45 +239,34 @@ export async function computeFaultLocation(
     }
   }
 
-    // 3) GeoJSON: { type:'Point', coordinates:[lon,lat] }
-    const geomCandidate = get(payload, ['geom']) ?? get(payload, ['geometry']);
-    if (isGeoJSONGeometry(geomCandidate) && geomCandidate.type === 'Point') {
-      const [lon3, lat3] = geomCandidate.coordinates;
-      if (Number.isFinite(lat3) && Number.isFinite(lon3)) return { lat: lat3, lon: lon3 };
-    }
-
-    throw new Error(`compute-fault-location devolvió un formato inesperado: ${JSON.stringify(payload)}`);
-  } catch (error) {
-    await handleAuthError(error);
-    throw error;
+  // 3) GeoJSON: { type:'Point', coordinates:[lon,lat] }
+  const geomCandidate = get(payload, ['geom']) ?? get(payload, ['geometry']);
+  if (isGeoJSONGeometry(geomCandidate) && geomCandidate.type === 'Point') {
+    const [lon3, lat3] = geomCandidate.coordinates;
+    if (Number.isFinite(lat3) && Number.isFinite(lon3)) return { lat: lat3, lon: lon3 };
   }
+
+  throw new Error(`compute-fault-location devolvió un formato inesperado: ${JSON.stringify(payload)}`);
 }
 
 export async function importKMZ(file: File) {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
+  const formData = new FormData();
+  formData.append('file', file);
 
-    const headers = await buildFunctionHeaders(false);
+  const headers = await buildFunctionHeaders(false);
 
-    const response = await fetch(`${supabaseUrl}/functions/v1/import-kmz`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
+  const response = await fetch(`${supabaseUrl}/functions/v1/import-kmz`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
 
-    if (!response.ok) {
-      const msg = await parseFetchError(response);
-      const error = new Error(msg || 'Failed to import KMZ');
-      await handleAuthError(error);
-      throw error;
-    }
-
-    return response.json();
-  } catch (error) {
-    await handleAuthError(error);
-    throw error;
+  if (!response.ok) {
+    const msg = await parseFetchError(response);
+    throw new Error(msg || 'Failed to import KMZ');
   }
+
+  return response.json();
 }
 
 export interface UpdateFallaPayload {
