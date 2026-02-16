@@ -124,7 +124,7 @@ export default function WelcomePage() {
               <Button
                 variant="primary"
                 icon={<ArrowRight className="w-5 h-5" />}
-                onClick={() => navigate('/dashboard/mapa')}
+                onClick={() => navigate('/login')}
                 className="text-lg px-8 py-4 shadow-xl hover:shadow-2xl transition-all"
               >
                 Acceder al Sistema

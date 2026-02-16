@@ -3,7 +3,9 @@ import { Suspense, lazy, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
 import WelcomePage from './pages/WelcomePage';
+import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 const MapPage = lazy(() => import('./pages/MapPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
@@ -31,14 +33,36 @@ export default function App() {
             <Suspense fallback={<div className="p-6 text-sm text-[#6B7280]">Cargando…</div>}>
             <Routes>
               <Route path="/" element={<WelcomePage />} />
+              <Route path="/login" element={<LoginPage />} />
 
-              <Route path="/dashboard" element={<AppLayout onShare={() => setShowShare(true)} />}>
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout onShare={() => setShowShare(true)} />
+                  </ProtectedRoute>
+                }
+              >
                 <Route index element={<Navigate to="/dashboard/mapa" replace />} />
                 <Route path="mapa" element={<MapPage />} />
                 <Route path="reportes" element={<ReportsPage />} />
                 <Route path="info-lineas" element={<InfoLineasPage />} />
-                <Route path="admin/lineas" element={<AdminLinesPage />} />
-                <Route path="admin/importar" element={<AdminImportPage />} />
+                <Route
+                  path="admin/lineas"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <AdminLinesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/importar"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <AdminImportPage />
+                    </ProtectedRoute>
+                  }
+                />
               </Route>
 
               <Route path="*" element={<NotFoundPage />} />
