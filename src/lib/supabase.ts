@@ -130,6 +130,27 @@ async function buildFunctionHeaders(isJsonBody: boolean) {
   return headers;
 }
 
+// ---- Helper para llamadas RPC con manejo de errores ----
+export async function callRpc<T>(
+  functionName: string,
+  params: Record<string, unknown>
+): Promise<T> {
+  try {
+    const { data, error } = await supabase.rpc(functionName, params);
+
+    if (error) {
+      console.error(`RPC ${functionName} error:`, error);
+      await handleAuthError(error);
+      throw error;
+    }
+
+    return data as T;
+  } catch (error) {
+    await handleAuthError(error);
+    throw error;
+  }
+}
+
 // ---- Funciones públicas ----
 
 /**
@@ -294,14 +315,10 @@ export async function updateFalla(fallaId: string, payload: UpdateFallaPayload) 
     if (payload.estado !== undefined) updateData.estado = payload.estado;
     if (ocurrenciaTs !== undefined) updateData.ocurrencia_ts = ocurrenciaTs;
     if (geomWkt !== undefined) {
-      const { error } = await supabase.rpc('update_falla_geom', {
+      await callRpc('update_falla_geom', {
         p_falla_id: fallaId,
         p_geom_wkt: geomWkt,
       });
-      if (error) {
-        await handleAuthError(error);
-        throw error;
-      }
     }
 
     const { data, error } = await supabase

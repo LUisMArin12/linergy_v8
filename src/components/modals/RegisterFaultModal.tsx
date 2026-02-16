@@ -6,7 +6,7 @@ import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import SearchableSelect from '../ui/SearchableSelect';
 import Button from '../ui/Button';
-import { supabase, computeFaultLocation } from '../../lib/supabase';
+import { supabase, computeFaultLocation, callRpc } from '../../lib/supabase';
 import { useToast } from '../../contexts/ToastContext';
 import { useMapFocus } from '../../contexts/MapFocusContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -103,6 +103,10 @@ export default function RegisterFaultModal() {
     mutationFn: async (data: FaultFormData) => {
       if (!data.lineaId) throw new Error('Selecciona una línea');
 
+      if (lineas.length === 0) {
+        throw new Error('No hay líneas disponibles. Por favor, importa líneas primero desde el panel de administración.');
+      }
+
       const km = data.km === null ? null : Number(data.km);
       if (km === null || !Number.isFinite(km) || km < 0) {
         throw new Error('KM inválido (debe ser >= 0)');
@@ -128,7 +132,7 @@ export default function RegisterFaultModal() {
       const geomWkt = `POINT(${lon} ${lat})`;
       const ocurrenciaTs = new Date(`${data.fecha}T${data.hora}`).toISOString();
 
-      const { data: fallaArray, error } = await supabase.rpc('insert_falla_with_wkt', {
+      const fallaArray = await callRpc<Array<{ id: string; linea_id: string; km: number; tipo: string; descripcion: string | null; estado: string; ocurrencia_ts: string }>>('insert_falla_with_wkt', {
         p_linea_id: data.lineaId,
         p_km: km,
         p_tipo: tipo,
@@ -138,7 +142,6 @@ export default function RegisterFaultModal() {
         p_geom_wkt: geomWkt,
       });
 
-      if (error) throw error;
       if (!fallaArray || fallaArray.length === 0) {
         throw new Error('No se pudo crear la falla');
       }
@@ -240,6 +243,13 @@ export default function RegisterFaultModal() {
   return (
     <>
       <Modal isOpen={isRegisterFaultOpen} onClose={handleClose} title="Registrar Falla" size="lg">
+        {lineas.length === 0 && !lineasLoading && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <p className="text-sm text-yellow-800">
+              No hay líneas disponibles. Por favor, importa líneas desde el panel de administración antes de registrar fallas.
+            </p>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* ✅ Si hay foco (lineId): mostramos solo lectura para evitar registrar en otra línea */}
           {focusedLineId ? (
