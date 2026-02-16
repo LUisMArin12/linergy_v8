@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { GeoJSONGeometry, isGeoJSONGeometry } from '../types/geo';
+import { handleAuthError } from './authErrorHandler';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -8,7 +9,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+});
 
 export type Linea = {
   id: string;
@@ -139,18 +146,21 @@ export async function computeFaultLocation(
   lineaId: string,
   km: number
 ): Promise<{ lat: number; lon: number }> {
-  const headers = await buildFunctionHeaders(true);
+  try {
+    const headers = await buildFunctionHeaders(true);
 
-  const response = await fetch(`${supabaseUrl}/functions/v1/compute-fault-location`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ lineaId, km }),
-  });
+    const response = await fetch(`${supabaseUrl}/functions/v1/compute-fault-location`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ lineaId, km }),
+    });
 
-  if (!response.ok) {
-    const msg = await parseFetchError(response);
-    throw new Error(msg || 'Failed to compute location');
-  }
+    if (!response.ok) {
+      const msg = await parseFetchError(response);
+      const error = new Error(msg || 'Failed to compute location');
+      await handleAuthError(error);
+      throw error;
+    }
 
   const payload: unknown = await response.json();
 
@@ -211,34 +221,45 @@ export async function computeFaultLocation(
     }
   }
 
-  // 3) GeoJSON: { type:'Point', coordinates:[lon,lat] }
-  const geomCandidate = get(payload, ['geom']) ?? get(payload, ['geometry']);
-  if (isGeoJSONGeometry(geomCandidate) && geomCandidate.type === 'Point') {
-    const [lon3, lat3] = geomCandidate.coordinates;
-    if (Number.isFinite(lat3) && Number.isFinite(lon3)) return { lat: lat3, lon: lon3 };
-  }
+    // 3) GeoJSON: { type:'Point', coordinates:[lon,lat] }
+    const geomCandidate = get(payload, ['geom']) ?? get(payload, ['geometry']);
+    if (isGeoJSONGeometry(geomCandidate) && geomCandidate.type === 'Point') {
+      const [lon3, lat3] = geomCandidate.coordinates;
+      if (Number.isFinite(lat3) && Number.isFinite(lon3)) return { lat: lat3, lon: lon3 };
+    }
 
-  throw new Error(`compute-fault-location devolvió un formato inesperado: ${JSON.stringify(payload)}`);
+    throw new Error(`compute-fault-location devolvió un formato inesperado: ${JSON.stringify(payload)}`);
+  } catch (error) {
+    await handleAuthError(error);
+    throw error;
+  }
 }
 
 export async function importKMZ(file: File) {
-  const formData = new FormData();
-  formData.append('file', file);
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
 
-  const headers = await buildFunctionHeaders(false);
+    const headers = await buildFunctionHeaders(false);
 
-  const response = await fetch(`${supabaseUrl}/functions/v1/import-kmz`, {
-    method: 'POST',
-    headers,
-    body: formData,
-  });
+    const response = await fetch(`${supabaseUrl}/functions/v1/import-kmz`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
 
-  if (!response.ok) {
-    const msg = await parseFetchError(response);
-    throw new Error(msg || 'Failed to import KMZ');
+    if (!response.ok) {
+      const msg = await parseFetchError(response);
+      const error = new Error(msg || 'Failed to import KMZ');
+      await handleAuthError(error);
+      throw error;
+    }
+
+    return response.json();
+  } catch (error) {
+    await handleAuthError(error);
+    throw error;
   }
-
-  return response.json();
 }
 
 export interface UpdateFallaPayload {
@@ -252,63 +273,90 @@ export interface UpdateFallaPayload {
 }
 
 export async function updateFalla(fallaId: string, payload: UpdateFallaPayload) {
-  let geomWkt: string | undefined;
+  try {
+    let geomWkt: string | undefined;
 
-  if (payload.lineaId !== undefined && payload.km !== undefined) {
-    const location = await computeFaultLocation(payload.lineaId, payload.km);
-    geomWkt = `POINT(${location.lon} ${location.lat})`;
+    if (payload.lineaId !== undefined && payload.km !== undefined) {
+      const location = await computeFaultLocation(payload.lineaId, payload.km);
+      geomWkt = `POINT(${location.lon} ${location.lat})`;
+    }
+
+    let ocurrenciaTs: string | undefined;
+    if (payload.fecha !== undefined && payload.hora !== undefined) {
+      ocurrenciaTs = new Date(`${payload.fecha}T${payload.hora}`).toISOString();
+    }
+
+    const updateData: Partial<{ linea_id: string; km: number; tipo: string; descripcion: string | null; estado: 'ABIERTA' | 'EN_ATENCION' | 'CERRADA'; ocurrencia_ts: string }> = {};
+    if (payload.lineaId !== undefined) updateData.linea_id = payload.lineaId;
+    if (payload.km !== undefined) updateData.km = payload.km;
+    if (payload.tipo !== undefined) updateData.tipo = payload.tipo;
+    if (payload.descripcion !== undefined) updateData.descripcion = payload.descripcion;
+    if (payload.estado !== undefined) updateData.estado = payload.estado;
+    if (ocurrenciaTs !== undefined) updateData.ocurrencia_ts = ocurrenciaTs;
+    if (geomWkt !== undefined) {
+      const { error } = await supabase.rpc('update_falla_geom', {
+        p_falla_id: fallaId,
+        p_geom_wkt: geomWkt,
+      });
+      if (error) {
+        await handleAuthError(error);
+        throw error;
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('fallas')
+      .update(updateData)
+      .eq('id', fallaId)
+      .select()
+      .single();
+
+    if (error) {
+      await handleAuthError(error);
+      throw error;
+    }
+    return data;
+  } catch (error) {
+    await handleAuthError(error);
+    throw error;
   }
-
-  let ocurrenciaTs: string | undefined;
-  if (payload.fecha !== undefined && payload.hora !== undefined) {
-    ocurrenciaTs = new Date(`${payload.fecha}T${payload.hora}`).toISOString();
-  }
-
-  const updateData: Partial<{ linea_id: string; km: number; tipo: string; descripcion: string | null; estado: 'ABIERTA' | 'EN_ATENCION' | 'CERRADA'; ocurrencia_ts: string }> = {};
-  if (payload.lineaId !== undefined) updateData.linea_id = payload.lineaId;
-  if (payload.km !== undefined) updateData.km = payload.km;
-  if (payload.tipo !== undefined) updateData.tipo = payload.tipo;
-  if (payload.descripcion !== undefined) updateData.descripcion = payload.descripcion;
-  if (payload.estado !== undefined) updateData.estado = payload.estado;
-  if (ocurrenciaTs !== undefined) updateData.ocurrencia_ts = ocurrenciaTs;
-  if (geomWkt !== undefined) {
-    const { error } = await supabase.rpc('update_falla_geom', {
-      p_falla_id: fallaId,
-      p_geom_wkt: geomWkt,
-    });
-    if (error) throw error;
-  }
-
-  const { data, error } = await supabase
-    .from('fallas')
-    .update(updateData)
-    .eq('id', fallaId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
 }
 
 export async function deleteFalla(fallaId: string) {
-  const { error } = await supabase
-    .from('fallas')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', fallaId);
-  if (error) throw error;
+  try {
+    const { error } = await supabase
+      .from('fallas')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', fallaId);
+    if (error) {
+      await handleAuthError(error);
+      throw error;
+    }
+  } catch (error) {
+    await handleAuthError(error);
+    throw error;
+  }
 }
 
 export async function setFallaEstado(
   fallaId: string,
   estado: 'ABIERTA' | 'EN_ATENCION' | 'CERRADA'
 ) {
-  const { data, error } = await supabase
-    .from('fallas')
-    .update({ estado })
-    .eq('id', fallaId)
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('fallas')
+      .update({ estado })
+      .eq('id', fallaId)
+      .select()
+      .single();
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      await handleAuthError(error);
+      throw error;
+    }
+    return data;
+  } catch (error) {
+    await handleAuthError(error);
+    throw error;
+  }
 }
