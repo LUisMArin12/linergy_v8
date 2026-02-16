@@ -1,4 +1,4 @@
-import { ReactNode, HTMLAttributes } from 'react';
+import { ReactNode, HTMLAttributes, memo } from 'react';
 import clsx from 'clsx';
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
@@ -7,7 +7,7 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   clickable?: boolean;
 }
 
-export default function Card({ children, hover = false, clickable = false, className, ...props }: CardProps) {
+const Card = memo(function Card({ children, hover = false, clickable = false, className, ...props }: CardProps) {
   return (
     <div
       className={clsx(
@@ -23,4 +23,6 @@ export default function Card({ children, hover = false, clickable = false, class
       {children}
     </div>
   );
-}
+});
+
+export default Card;

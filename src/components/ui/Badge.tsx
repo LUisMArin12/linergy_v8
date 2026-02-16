@@ -1,16 +1,16 @@
-import { ReactNode } from 'react';
+import { ReactNode, memo } from 'react';
 import clsx from 'clsx';
 import { Classification, FaultStatus } from '../../types';
 
 interface BadgeProps {
   children: ReactNode;
-  variant?: 'classification' | 'status' | 'default';
+  variant?: 'classification' | 'status' | 'default' | 'info' | 'warning';
   classification?: Classification | 'ALTA' | 'MODERADA' | 'BAJA';
   status?: FaultStatus | 'ABIERTA' | 'EN_ATENCION' | 'CERRADA';
   className?: string;
 }
 
-export default function Badge({ children, variant = 'default', classification, status, className }: BadgeProps) {
+const Badge = memo(function Badge({ children, variant = 'default', classification, status, className }: BadgeProps) {
   const getClassificationColor = (c?: string) => {
     if (!c) return 'bg-gray-100 text-gray-800 border-gray-200';
     const normalized = c.toUpperCase();
@@ -50,6 +50,8 @@ export default function Badge({ children, variant = 'default', classification, s
           [getClassificationColor(classification!)]: variant === 'classification' && classification,
           [getStatusColor(status!)]: variant === 'status' && status,
           'bg-[#DDF3EA] text-[#0B3D2E] border-[#157A5A]': variant === 'default',
+          'bg-blue-100 text-blue-800 border-blue-200': variant === 'info',
+          'bg-amber-100 text-amber-800 border-amber-200': variant === 'warning',
         },
         className
       )}
@@ -57,4 +59,6 @@ export default function Badge({ children, variant = 'default', classification, s
       {children}
     </span>
   );
-}
+});
+
+export default Badge;

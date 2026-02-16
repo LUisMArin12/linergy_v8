@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, memo } from 'react';
 import clsx from 'clsx';
 
 interface ChipProps {
@@ -9,7 +9,7 @@ interface ChipProps {
   className?: string;
 }
 
-export default function Chip({ children, selected = false, onClick, icon, className }: ChipProps) {
+const Chip = memo(function Chip({ children, selected = false, onClick, icon, className }: ChipProps) {
   return (
     <button
       onClick={onClick}
@@ -27,4 +27,6 @@ export default function Chip({ children, selected = false, onClick, icon, classN
       {children}
     </button>
   );
-}
+});
+
+export default Chip;
