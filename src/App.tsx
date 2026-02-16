@@ -11,6 +11,7 @@ const MapPage = lazy(() => import('./pages/MapPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const AdminLinesPage = lazy(() => import('./pages/AdminLinesPage'));
 const AdminImportPage = lazy(() => import('./pages/AdminImportPage'));
+const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
 const InfoLineasPage = lazy(() => import('./pages/InfoLineasPage'));
 
 import RegisterFaultModal from './components/modals/RegisterFaultModal';
@@ -60,6 +61,14 @@ export default function App() {
                   element={
                     <ProtectedRoute requireAdmin>
                       <AdminImportPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/usuarios"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <AdminUsersPage />
                     </ProtectedRoute>
                   }
                 />
