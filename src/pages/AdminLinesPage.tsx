@@ -408,8 +408,8 @@ export default function AdminLinesPage() {
         onClose={() => setLineToDelete(null)}
         onConfirm={handleConfirmDelete}
         title="Eliminar Línea"
-        description="Esta acción no se puede deshacer."
-        isLoading={deleteLineaMutation.isPending}
+        message="¿Estás seguro de que deseas eliminar esta línea? Esta acción no se puede deshacer."
+        isDeleting={deleteLineaMutation.isPending}
       />
     </div>
   );

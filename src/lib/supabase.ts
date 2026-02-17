@@ -49,7 +49,7 @@ export type Falla = {
   descripcion: string | null;
   estado: 'ABIERTA' | 'EN_ATENCION' | 'CERRADA';
   ocurrencia_ts: string;
-  geom: string | GeoJSONGeometry;
+  geom: string | GeoJSONGeometry | null;
   created_at: string;
   updated_at: string;
 };

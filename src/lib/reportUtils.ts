@@ -262,20 +262,20 @@ export function generateFaultPDF(falla: FaultForReport, linea: LineForReport) {
     if (entry) {
       // Render en tabla 2 columnas (más organizado que lista)
       const items: Array<[string, string]> = [
-        ['Clave enlace', entry.clave_enlace],
+        ['Clave enlace', entry.claveEnlace],
         ['Descripción', entry.descripcion],
         ['Área', String(entry.area ?? 'N/A')],
         ['Tensión', entry.tension],
         ['Kms', String(entry.kms ?? 'N/A')],
         ['NC', String(entry.nc ?? 'N/A')],
         ['Conductor', entry.conductor],
-        ['Tip. Estruc', entry.tip_estruc],
-        ['# Est', String(entry.num_est ?? 'N/A')],
+        ['Tip. Estruc', entry.tipoEstructura],
+        ['# Est', String(entry.numEstructuras ?? 'N/A')],
         ['Año', String(entry.anio ?? 'N/A')],
         ['Comp', entry.comp],
-        ['Cve SAP', entry.cve_sap],
+        ['Cve SAP', entry.cveSap],
         ['Brecha', String(entry.brecha ?? 'N/A')],
-        ['Conf. cond', entry.conf_cond],
+        ['Conf. cond', entry.confCond],
         ['Pob', entry.pob],
         ['Ent', entry.ent],
       ];

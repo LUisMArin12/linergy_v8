@@ -75,7 +75,6 @@ export default function MapPage() {
   const defaultFilters: FilterState = {
     classifications: [],
     statuses: [],
-    showStructures: false,
     showFaults: false,
   };
 
@@ -153,13 +152,11 @@ export default function MapPage() {
 
   const estructuras = useMemo(() => {
     if (focusedLineId) return allEstructuras.filter((e) => e.linea_id === focusedLineId);
-
-    if (!filters.showStructures) return [];
     if (lineas.length === 0) return [];
 
     const lineaIds = lineas.map((l) => l.id);
     return allEstructuras.filter((e: Estructura) => lineaIds.includes(e.linea_id));
-  }, [allEstructuras, focusedLineId, filters.showStructures, lineas]);
+  }, [allEstructuras, focusedLineId, lineas]);
 
   const fallas = useMemo(() => {
     if (focusedLineId) return allFallas.filter((f) => f.linea_id === focusedLineId);
@@ -225,7 +222,6 @@ export default function MapPage() {
 
   const handleSelectEstructura = (e: Estructura) => {
     setSelectedItem({ item: e, type: 'estructura' });
-    setFilters((prev) => (prev.showStructures ? prev : { ...prev, showStructures: true }));
   };
 
   const handleClosePanel = () => {
