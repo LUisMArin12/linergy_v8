@@ -148,6 +148,7 @@ export default function DetailPanel({ item, type, onClose, onCenterMap }: Detail
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fallas'] });
+      queryClient.invalidateQueries({ queryKey: ['fallas_reports'] });
       showToast('Falla eliminada correctamente', 'success');
       onClose();
     },

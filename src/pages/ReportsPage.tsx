@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Copy, Download, Eye, FileText, Filter, Search, X } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Copy, Download, Eye, FileText, Filter, Search, Trash2, X } from 'lucide-react';
 
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -11,7 +11,9 @@ import Select from '../components/ui/Select';
 import { supabase, Falla, Linea, parseGeometry } from '../lib/supabase';
 import { generateFaultPDF, copyFaultText } from '../lib/reportUtils';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
 import FaultReportModal from '../components/modals/FaultReportModal';
+import ConfirmDeleteModal from '../components/modals/ConfirmDeleteModal';
 
 const estadoLabel: Record<string, string> = {
   ABIERTA: 'Abierta',
@@ -36,6 +38,8 @@ function isValidLatLon(lat: unknown, lon: unknown): lat is number {
 
 export default function ReportsPage() {
   const { showToast } = useToast();
+  const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLinea, setSelectedLinea] = useState('');
@@ -44,6 +48,7 @@ export default function ReportsPage() {
   const [dateTo, setDateTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedFalla, setSelectedFalla] = useState<Falla | null>(null);
+  const [fallaToDelete, setFallaToDelete] = useState<Falla | null>(null);
   const [page, setPage] = useState(1);
   const itemsPerPage = 20;
 
@@ -134,6 +139,27 @@ export default function ReportsPage() {
       showToast('Texto copiado al portapapeles', 'success');
     } catch {
       showToast('Error al copiar texto', 'error');
+    }
+  };
+
+  const deleteFallaMutation = useMutation({
+    mutationFn: async (fallaId: string) => {
+      const { error } = await supabase.from('fallas').update({ deleted_at: new Date().toISOString() }).eq('id', fallaId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fallas_reports'] });
+      showToast('Reporte eliminado correctamente', 'success');
+      setFallaToDelete(null);
+    },
+    onError: () => {
+      showToast('Error al eliminar el reporte', 'error');
+    },
+  });
+
+  const handleConfirmDelete = () => {
+    if (fallaToDelete) {
+      deleteFallaMutation.mutate(fallaToDelete.id);
     }
   };
 
@@ -318,6 +344,15 @@ export default function ReportsPage() {
                     >
                       <Copy className="w-4 h-4 text-[#6B7280]" />
                     </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => setFallaToDelete(falla)}
+                        className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Eliminar reporte"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </button>
+                    )}
                   </div>
                 </Card>
               );
@@ -394,6 +429,15 @@ export default function ReportsPage() {
                             >
                               <Copy className="w-4 h-4 text-[#6B7280]" />
                             </button>
+                            {isAdmin && (
+                              <button
+                                onClick={() => setFallaToDelete(falla)}
+                                className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Eliminar reporte"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -467,6 +511,15 @@ export default function ReportsPage() {
             />
           );
         })()}
+
+      <ConfirmDeleteModal
+        isOpen={!!fallaToDelete}
+        onClose={() => setFallaToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Reporte"
+        message="¿Estás seguro de que deseas eliminar este reporte? Esta acción no se puede deshacer."
+        isDeleting={deleteFallaMutation.isPending}
+      />
     </div>
   );
 }

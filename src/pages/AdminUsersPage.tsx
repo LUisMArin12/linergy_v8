@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Shield, User, RefreshCw } from 'lucide-react';
+import { Users, Shield, User, RefreshCw, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Select from '../components/ui/Select';
 import Badge from '../components/ui/Badge';
 import { useToast } from '../contexts/ToastContext';
+import ConfirmDeleteModal from '../components/modals/ConfirmDeleteModal';
 
 type UserWithProfile = {
   id: string;
@@ -20,6 +21,7 @@ export default function AdminUsersPage() {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const [roleChanges, setRoleChanges] = useState<Record<string, 'admin' | 'user'>>({});
+  const [userToDelete, setUserToDelete] = useState<UserWithProfile | null>(null);
 
   const { data: users, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-users'],
@@ -53,6 +55,23 @@ export default function AdminUsersPage() {
     },
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase.rpc('delete_user', {
+        user_id: userId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      showToast('Usuario eliminado correctamente', 'success');
+      setUserToDelete(null);
+    },
+    onError: (error: Error) => {
+      showToast(error.message || 'Error al eliminar usuario', 'error');
+    },
+  });
+
   const handleRoleChange = (userId: string, newRole: 'admin' | 'user') => {
     setRoleChanges((prev) => ({ ...prev, [userId]: newRole }));
   };
@@ -66,6 +85,12 @@ export default function AdminUsersPage() {
 
   const hasChanges = (userId: string, currentRole: string) => {
     return roleChanges[userId] && roleChanges[userId] !== currentRole;
+  };
+
+  const handleConfirmDelete = () => {
+    if (userToDelete) {
+      deleteUserMutation.mutate(userToDelete.id);
+    }
   };
 
   const formatDate = (dateStr: string | null) => {
@@ -183,23 +208,32 @@ export default function AdminUsersPage() {
                       {formatDate(user.last_sign_in_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {hasChanges(user.id, user.role) ? (
-                        <Button
-                          size="sm"
-                          onClick={() => handleSaveRole(user.id)}
-                          disabled={updateRoleMutation.isPending}
+                      <div className="flex items-center gap-2">
+                        {hasChanges(user.id, user.role) ? (
+                          <Button
+                            size="sm"
+                            onClick={() => handleSaveRole(user.id)}
+                            disabled={updateRoleMutation.isPending}
+                          >
+                            {updateRoleMutation.isPending ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              'Guardar'
+                            )}
+                          </Button>
+                        ) : (
+                          <Badge variant={user.role === 'admin' ? 'warning' : 'info'}>
+                            {user.role === 'admin' ? 'Admin' : 'Usuario'}
+                          </Badge>
+                        )}
+                        <button
+                          onClick={() => setUserToDelete(user)}
+                          className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Eliminar usuario"
                         >
-                          {updateRoleMutation.isPending ? (
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                          ) : (
-                            'Guardar'
-                          )}
-                        </Button>
-                      ) : (
-                        <Badge variant={user.role === 'admin' ? 'warning' : 'info'}>
-                          {user.role === 'admin' ? 'Admin' : 'Usuario'}
-                        </Badge>
-                      )}
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -236,6 +270,15 @@ export default function AdminUsersPage() {
             </div>
           </div>
         </Card>
+
+        <ConfirmDeleteModal
+          isOpen={!!userToDelete}
+          onClose={() => setUserToDelete(null)}
+          onConfirm={handleConfirmDelete}
+          title="Eliminar Usuario"
+          message={`¿Estás seguro de que deseas eliminar al usuario ${userToDelete?.email}? Esta acción no se puede deshacer y eliminará todos los datos asociados.`}
+          isDeleting={deleteUserMutation.isPending}
+        />
       </div>
     </div>
   );

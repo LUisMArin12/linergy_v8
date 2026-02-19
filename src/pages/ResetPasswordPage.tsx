@@ -16,14 +16,25 @@ export default function ResetPasswordPage() {
   const [validSession, setValidSession] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setValidSession(true);
       } else {
         showToast('Enlace inválido o expirado', 'error');
         setTimeout(() => navigate('/login'), 2000);
       }
+    };
+
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        setValidSession(true);
+      }
     });
+
+    return () => subscription.unsubscribe();
   }, [navigate, showToast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
