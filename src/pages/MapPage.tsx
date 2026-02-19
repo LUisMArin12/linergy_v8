@@ -356,6 +356,8 @@ export default function MapPage() {
           />
         )}
       </AnimatePresence>
+
+      {showWelcome && <WelcomeMessage userName={profile?.email?.split('@')[0]} />}
       </div>
     </>
   );
