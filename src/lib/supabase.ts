@@ -54,6 +54,20 @@ export type Falla = {
   updated_at: string;
 };
 
+export type Reporte = {
+  id: string;
+  falla_id: string | null;
+  linea_id: string;
+  km: number;
+  tipo: string;
+  descripcion: string | null;
+  estado: 'ABIERTA' | 'EN_ATENCION' | 'CERRADA';
+  ocurrencia_ts: string;
+  geom: string | GeoJSONGeometry | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export function parseGeometry(geom: string | GeoJSONGeometry | null | undefined): GeoJSONGeometry | null {
   if (!geom) return null;
 
@@ -331,6 +345,22 @@ export async function deleteFalla(fallaId: string) {
       .from('fallas')
       .delete()
       .eq('id', fallaId);
+    if (error) {
+      await handleAuthError(error);
+      throw error;
+    }
+  } catch (error) {
+    await handleAuthError(error);
+    throw error;
+  }
+}
+
+export async function deleteReporte(reporteId: string) {
+  try {
+    const { error } = await supabase
+      .from('reportes')
+      .delete()
+      .eq('id', reporteId);
     if (error) {
       await handleAuthError(error);
       throw error;

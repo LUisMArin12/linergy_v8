@@ -1,11 +1,18 @@
 import { jsPDF } from 'jspdf';
 import { findLineaCatalogEntry, formatLineaCatalogEntryLines } from './lineaCatalog';
-import { Falla, Linea, parseGeometry } from './supabase';
+import { Linea, parseGeometry } from './supabase';
 
-export type FaultForReport = Pick<
-  Falla,
-  'id' | 'ocurrencia_ts' | 'km' | 'tipo' | 'descripcion' | 'estado' | 'geom'
->;
+import { GeoJSONGeometry } from '../types/geo';
+
+export type FaultForReport = {
+  id: string;
+  ocurrencia_ts: string;
+  km: number;
+  tipo: string;
+  descripcion: string | null;
+  estado: string;
+  geom: string | GeoJSONGeometry | null;
+};
 
 export type LineForReport = Pick<Linea, 'numero' | 'nombre'> | null;
 

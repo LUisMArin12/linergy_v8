@@ -8,7 +8,7 @@ import Badge from '../components/ui/Badge';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 
-import { supabase, Falla, Linea, parseGeometry, deleteFalla } from '../lib/supabase';
+import { supabase, Reporte, Linea, parseGeometry, deleteReporte } from '../lib/supabase';
 import { generateFaultPDF, copyFaultText } from '../lib/reportUtils';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -47,8 +47,8 @@ export default function ReportsPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedFalla, setSelectedFalla] = useState<Falla | null>(null);
-  const [fallaToDelete, setFallaToDelete] = useState<Falla | null>(null);
+  const [selectedReporte, setSelectedReporte] = useState<Reporte | null>(null);
+  const [reporteToDelete, setReporteToDelete] = useState<Reporte | null>(null);
   const [page, setPage] = useState(1);
   const itemsPerPage = 20;
 
@@ -61,17 +61,17 @@ export default function ReportsPage() {
     },
   });
 
-  const { data: allFallas = [], isLoading } = useQuery({
-    queryKey: ['fallas_reports'],
+  const { data: allReportes = [], isLoading } = useQuery({
+    queryKey: ['reportes'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_fallas_geojson');
+      const { data, error } = await supabase.from('reportes').select('*').order('ocurrencia_ts', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Falla[];
+      return (data ?? []) as Reporte[];
     },
   });
 
-  const filteredFallas = useMemo(() => {
-    let filtered = allFallas;
+  const filteredReportes = useMemo(() => {
+    let filtered = allReportes;
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -103,15 +103,15 @@ export default function ReportsPage() {
     return filtered.sort(
       (a, b) => new Date(b.ocurrencia_ts).getTime() - new Date(a.ocurrencia_ts).getTime()
     );
-  }, [allFallas, searchQuery, selectedLinea, selectedEstado, dateFrom, dateTo]);
+  }, [allReportes, searchQuery, selectedLinea, selectedEstado, dateFrom, dateTo]);
 
-  const totalPages = Math.ceil(filteredFallas.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredReportes.length / itemsPerPage);
 
-  const paginatedFallas = useMemo(() => {
+  const paginatedReportes = useMemo(() => {
     const start = (page - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    return filteredFallas.slice(start, end);
-  }, [filteredFallas, page]);
+    return filteredReportes.slice(start, end);
+  }, [filteredReportes, page]);
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -122,35 +122,34 @@ export default function ReportsPage() {
     setPage(1);
   };
 
-  const handleExportPDF = (falla: Falla) => {
+  const handleExportPDF = (reporte: Reporte) => {
     try {
-      const linea = lineas.find((l) => l.id === falla.linea_id) ?? null;
-      generateFaultPDF(falla, linea);
+      const linea = lineas.find((l) => l.id === reporte.linea_id) ?? null;
+      generateFaultPDF(reporte, linea);
       showToast('PDF generado correctamente', 'success');
     } catch {
       showToast('Error al generar PDF', 'error');
     }
   };
 
-  const handleCopyText = (falla: Falla) => {
+  const handleCopyText = (reporte: Reporte) => {
     try {
-      const linea = lineas.find((l) => l.id === falla.linea_id) ?? null;
-      copyFaultText(falla, linea);
+      const linea = lineas.find((l) => l.id === reporte.linea_id) ?? null;
+      copyFaultText(reporte, linea);
       showToast('Texto copiado al portapapeles', 'success');
     } catch {
       showToast('Error al copiar texto', 'error');
     }
   };
 
-  const deleteFallaMutation = useMutation({
-    mutationFn: async (fallaId: string) => {
-      await deleteFalla(fallaId);
+  const deleteReporteMutation = useMutation({
+    mutationFn: async (reporteId: string) => {
+      await deleteReporte(reporteId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fallas_reports'] });
-      queryClient.invalidateQueries({ queryKey: ['fallas'] });
+      queryClient.invalidateQueries({ queryKey: ['reportes'] });
       showToast('Reporte eliminado correctamente', 'success');
-      setFallaToDelete(null);
+      setReporteToDelete(null);
     },
     onError: (error) => {
       const message = error instanceof Error ? error.message : 'Error al eliminar el reporte';
@@ -159,8 +158,8 @@ export default function ReportsPage() {
   });
 
   const handleConfirmDelete = () => {
-    if (fallaToDelete) {
-      deleteFallaMutation.mutate(fallaToDelete.id);
+    if (reporteToDelete) {
+      deleteReporteMutation.mutate(reporteToDelete.id);
     }
   };
 
@@ -177,7 +176,7 @@ export default function ReportsPage() {
         <div>
           <h1 className="text-2xl font-bold text-[#111827]">Reportes de Fallas</h1>
           <p className="text-sm text-[#6B7280] mt-1">
-            Inventario de fallas registradas (el reporte se genera a partir de la falla).
+            Gestiona y consulta todos los reportes generados en el sistema.
           </p>
         </div>
 
@@ -274,72 +273,72 @@ export default function ReportsPage() {
       {isLoading ? (
         <Card className="p-12 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#157A5A] mx-auto mb-4" />
-          <p className="text-[#6B7280]">Cargando fallas...</p>
+          <p className="text-[#6B7280]">Cargando reportes...</p>
         </Card>
-      ) : filteredFallas.length === 0 ? (
+      ) : filteredReportes.length === 0 ? (
         <Card className="p-12 text-center">
           <FileText className="w-12 h-12 text-[#6B7280] mx-auto mb-4" />
           <p className="text-[#6B7280]">
             {activeFiltersCount > 0
-              ? 'No se encontraron fallas con los filtros aplicados'
-              : 'No hay fallas registradas'}
+              ? 'No se encontraron reportes con los filtros aplicados'
+              : 'No hay reportes registrados'}
           </p>
         </Card>
       ) : (
         <>
           {/* Mobile-first: cards en móvil, tabla en md+ */}
           <div className="md:hidden space-y-3">
-            {paginatedFallas.map((falla) => {
-              const linea = lineas.find((l) => l.id === falla.linea_id) ?? null;
+            {paginatedReportes.map((reporte) => {
+              const linea = lineas.find((l) => l.id === reporte.linea_id) ?? null;
               return (
-                <Card key={falla.id} className="p-4">
+                <Card key={reporte.id} className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-[#111827] truncate">
                         Línea {linea?.numero || 'N/A'} {linea?.nombre ? `- ${linea.nombre}` : ''}
                       </div>
                       <div className="text-xs text-[#6B7280] mt-1">
-                        {new Date(falla.ocurrencia_ts).toLocaleDateString('es-ES')}{' '}
-                        {new Date(falla.ocurrencia_ts).toLocaleTimeString('es-ES', {
+                        {new Date(reporte.ocurrencia_ts).toLocaleDateString('es-ES')}{' '}
+                        {new Date(reporte.ocurrencia_ts).toLocaleTimeString('es-ES', {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
                       </div>
                     </div>
 
-                    <Badge variant="status" status={falla.estado}>
-                      {estadoLabel[falla.estado] || falla.estado}
+                    <Badge variant="status" status={reporte.estado}>
+                      {estadoLabel[reporte.estado] || reporte.estado}
                     </Badge>
                   </div>
 
                   <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <div className="text-[11px] uppercase tracking-wide text-[#6B7280]">KM</div>
-                      <div className="text-[#111827]">{falla.km.toFixed(1)}</div>
+                      <div className="text-[#111827]">{reporte.km.toFixed(1)}</div>
                     </div>
                     <div className="col-span-2">
                       <div className="text-[11px] uppercase tracking-wide text-[#6B7280]">Tipo</div>
-                      <div className="text-[#111827] truncate">{falla.tipo}</div>
+                      <div className="text-[#111827] truncate">{reporte.tipo}</div>
                     </div>
                   </div>
 
                   <div className="mt-4 flex items-center justify-end gap-2">
                     <button
-                      onClick={() => setSelectedFalla(falla)}
+                      onClick={() => setSelectedReporte(reporte)}
                       className="p-2 hover:bg-[#DDF3EA] rounded-lg transition-colors"
                       title="Ver detalle"
                     >
                       <Eye className="w-4 h-4 text-[#6B7280]" />
                     </button>
                     <button
-                      onClick={() => handleExportPDF(falla)}
+                      onClick={() => handleExportPDF(reporte)}
                       className="p-2 hover:bg-[#DDF3EA] rounded-lg transition-colors"
                       title="Exportar PDF"
                     >
                       <Download className="w-4 h-4 text-[#6B7280]" />
                     </button>
                     <button
-                      onClick={() => handleCopyText(falla)}
+                      onClick={() => handleCopyText(reporte)}
                       className="p-2 hover:bg-[#DDF3EA] rounded-lg transition-colors"
                       title="Copiar texto"
                     >
@@ -347,7 +346,7 @@ export default function ReportsPage() {
                     </button>
                     {isAdmin && (
                       <button
-                        onClick={() => setFallaToDelete(falla)}
+                        onClick={() => setReporteToDelete(reporte)}
                         className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                         title="Eliminar reporte"
                       >
@@ -386,23 +385,23 @@ export default function ReportsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E5E7EB]">
-                  {paginatedFallas.map((falla) => {
-                    const linea = lineas.find((l) => l.id === falla.linea_id) ?? null;
+                  {paginatedReportes.map((reporte) => {
+                    const linea = lineas.find((l) => l.id === reporte.linea_id) ?? null;
                     return (
-                      <tr key={falla.id} className="hover:bg-[#F7FAF8] transition-colors">
+                      <tr key={reporte.id} className="hover:bg-[#F7FAF8] transition-colors">
                         <td className="px-4 py-3 text-sm text-[#111827] font-medium">{linea?.numero || 'N/A'}</td>
-                        <td className="px-4 py-3 text-sm text-[#6B7280]">{falla.km.toFixed(1)}</td>
+                        <td className="px-4 py-3 text-sm text-[#6B7280]">{reporte.km.toFixed(1)}</td>
                         <td className="px-4 py-3 text-sm text-[#111827]">
-                          <div className="max-w-xs truncate">{falla.tipo}</div>
+                          <div className="max-w-xs truncate">{reporte.tipo}</div>
                         </td>
                         <td className="px-4 py-3">
-                          <Badge variant="status" status={falla.estado}>
-                            {estadoLabel[falla.estado] || falla.estado}
+                          <Badge variant="status" status={reporte.estado}>
+                            {estadoLabel[reporte.estado] || reporte.estado}
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-sm text-[#6B7280]">
-                          {new Date(falla.ocurrencia_ts).toLocaleDateString('es-ES')}{' '}
-                          {new Date(falla.ocurrencia_ts).toLocaleTimeString('es-ES', {
+                          {new Date(reporte.ocurrencia_ts).toLocaleDateString('es-ES')}{' '}
+                          {new Date(reporte.ocurrencia_ts).toLocaleTimeString('es-ES', {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
@@ -410,21 +409,21 @@ export default function ReportsPage() {
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-2">
                             <button
-                              onClick={() => setSelectedFalla(falla)}
+                              onClick={() => setSelectedReporte(reporte)}
                               className="p-1.5 hover:bg-[#DDF3EA] rounded-lg transition-colors"
                               title="Ver detalle"
                             >
                               <Eye className="w-4 h-4 text-[#6B7280]" />
                             </button>
                             <button
-                              onClick={() => handleExportPDF(falla)}
+                              onClick={() => handleExportPDF(reporte)}
                               className="p-1.5 hover:bg-[#DDF3EA] rounded-lg transition-colors"
                               title="Exportar PDF"
                             >
                               <Download className="w-4 h-4 text-[#6B7280]" />
                             </button>
                             <button
-                              onClick={() => handleCopyText(falla)}
+                              onClick={() => handleCopyText(reporte)}
                               className="p-1.5 hover:bg-[#DDF3EA] rounded-lg transition-colors"
                               title="Copiar texto"
                             >
@@ -432,7 +431,7 @@ export default function ReportsPage() {
                             </button>
                             {isAdmin && (
                               <button
-                                onClick={() => setFallaToDelete(falla)}
+                                onClick={() => setReporteToDelete(reporte)}
                                 className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
                                 title="Eliminar reporte"
                               >
@@ -452,8 +451,8 @@ export default function ReportsPage() {
           {totalPages > 1 && (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-[#6B7280]">
-                Mostrando {(page - 1) * itemsPerPage + 1} - {Math.min(page * itemsPerPage, filteredFallas.length)} de{' '}
-                {filteredFallas.length} fallas
+                Mostrando {(page - 1) * itemsPerPage + 1} - {Math.min(page * itemsPerPage, filteredReportes.length)} de{' '}
+                {filteredReportes.length} reportes
               </p>
               <div className="flex gap-2 justify-end">
                 <Button variant="secondary" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
@@ -472,11 +471,11 @@ export default function ReportsPage() {
         </>
       )}
 
-      {selectedFalla &&
+      {selectedReporte &&
         (() => {
-          const linea = lineas.find((l) => l.id === selectedFalla.linea_id) ?? null;
+          const linea = lineas.find((l) => l.id === selectedReporte.linea_id) ?? null;
 
-          const geom = parseGeometry(selectedFalla.geom);
+          const geom = parseGeometry(selectedReporte.geom);
           const coords = geom && geom.type === 'Point' ? geom.coordinates : null; // [lon, lat]
 
           const lonRaw = coords ? coords[0] : null;
@@ -486,40 +485,40 @@ export default function ReportsPage() {
           const lat: number | null = hasValidCoords ? latRaw : null;
           const lon: number | null = hasValidCoords ? lonRaw : null;
 
-          const fecha = new Date(selectedFalla.ocurrencia_ts);
+          const fecha = new Date(selectedReporte.ocurrencia_ts);
           const fechaStr = fecha.toISOString().split('T')[0];
           const horaStr = fecha.toTimeString().slice(0, 5);
 
           return (
             <FaultReportModal
               isOpen={true}
-              onClose={() => setSelectedFalla(null)}
+              onClose={() => setSelectedReporte(null)}
               faultData={{
                 lat,
                 lon,
                 hasValidCoords,
 
-                fallaId: selectedFalla.id,
+                fallaId: selectedReporte.id,
                 lineaNumero: linea?.numero || 'N/A',
                 lineaNombre: linea?.nombre || '',
-                km: selectedFalla.km,
-                tipo: selectedFalla.tipo,
+                km: selectedReporte.km,
+                tipo: selectedReporte.tipo,
                 fecha: fechaStr,
                 hora: horaStr,
-                descripcion: selectedFalla.descripcion || '',
-                estado: estadoLabel[selectedFalla.estado] || selectedFalla.estado,
+                descripcion: selectedReporte.descripcion || '',
+                estado: estadoLabel[selectedReporte.estado] || selectedReporte.estado,
               }}
             />
           );
         })()}
 
       <ConfirmDeleteModal
-        isOpen={!!fallaToDelete}
-        onClose={() => setFallaToDelete(null)}
+        isOpen={!!reporteToDelete}
+        onClose={() => setReporteToDelete(null)}
         onConfirm={handleConfirmDelete}
         title="Eliminar Reporte"
         message="¿Estás seguro de que deseas eliminar este reporte? Esta acción no se puede deshacer."
-        isDeleting={deleteFallaMutation.isPending}
+        isDeleting={deleteReporteMutation.isPending}
       />
     </div>
   );
