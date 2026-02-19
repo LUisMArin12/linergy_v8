@@ -329,7 +329,7 @@ export async function deleteFalla(fallaId: string) {
   try {
     const { error } = await supabase
       .from('fallas')
-      .update({ deleted_at: new Date().toISOString() })
+      .delete()
       .eq('id', fallaId);
     if (error) {
       await handleAuthError(error);
