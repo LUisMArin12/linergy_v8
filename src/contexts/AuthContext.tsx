@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { handleAuthError } from '../lib/authErrorHandler';
 import type { UserProfile } from '../types/auth';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 interface AuthContextType {
   user: User | null;
@@ -161,6 +162,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     refreshProfile,
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#F7FAF8] via-white to-[#DDF3EA] flex items-center justify-center">
+        <LoadingSpinner size="lg" message="Cargando..." />
+      </div>
+    );
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

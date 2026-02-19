@@ -1,6 +1,9 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import LoadingSpinner from '../ui/LoadingSpinner';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -12,8 +15,8 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-[#6B7280]">Cargando...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#F7FAF8] via-white to-[#DDF3EA]">
+        <LoadingSpinner size="lg" message="Verificando acceso..." />
       </div>
     );
   }
@@ -24,14 +27,21 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
 
   if (requireAdmin && profile?.role !== 'admin') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-6">
-        <div className="text-[#EF4444] text-lg font-semibold mb-2">
-          Acceso Denegado
-        </div>
-        <div className="text-[#6B7280] mb-4">
-          No tienes permisos de administrador para acceder a esta página.
-        </div>
-        <Navigate to="/dashboard/mapa" replace />
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#F7FAF8] via-white to-[#DDF3EA] p-6">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center max-w-md"
+        >
+          <div className="w-20 h-20 rounded-full bg-rose-100 mx-auto mb-4 flex items-center justify-center">
+            <Shield className="w-10 h-10 text-rose-600" strokeWidth={2} />
+          </div>
+          <h2 className="text-xl font-bold text-[#111827] mb-2">Acceso Restringido</h2>
+          <p className="text-[#6B7280] mb-6">
+            Esta sección requiere permisos de administrador.
+          </p>
+          <Navigate to="/dashboard/mapa" replace />
+        </motion.div>
       </div>
     );
   }
