@@ -22,11 +22,13 @@ export default function AdminLinesPage() {
   const [editingLine, setEditingLine] = useState<Linea | null>(null);
   const [lineToDelete, setLineToDelete] = useState<Linea | null>(null);
   const [formData, setFormData] = useState<{
+    numero: string;
     nombre: string;
     clasificacion: 'ALTA' | 'MODERADA' | 'BAJA';
     km_inicio: number | null;
     km_fin: number | null;
   }>({
+    numero: '',
     nombre: '',
     clasificacion: 'MODERADA',
     km_inicio: null,
@@ -92,6 +94,7 @@ export default function AdminLinesPage() {
   const handleEdit = (linea: Linea) => {
     setEditingLine(linea);
     setFormData({
+      numero: linea.numero,
       nombre: linea.nombre || '',
       clasificacion: linea.clasificacion,
       km_inicio: linea.km_inicio,
@@ -315,10 +318,19 @@ export default function AdminLinesPage() {
       >
         {editingLine && (
           <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-[#6B7280] mb-1">Número de línea</p>
-              <p className="text-lg font-semibold text-[#111827]">{editingLine.numero}</p>
-            </div>
+            <Input
+              label="Número de línea"
+              type="text"
+              value={formData.numero}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  numero: e.target.value,
+                })
+              }
+              placeholder="Ej: ATR735000"
+              required
+            />
 
             <Input
               label="Nombre de la línea"

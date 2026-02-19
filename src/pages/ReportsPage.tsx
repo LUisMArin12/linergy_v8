@@ -8,7 +8,7 @@ import Badge from '../components/ui/Badge';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 
-import { supabase, Falla, Linea, parseGeometry } from '../lib/supabase';
+import { supabase, Falla, Linea, parseGeometry, deleteFalla } from '../lib/supabase';
 import { generateFaultPDF, copyFaultText } from '../lib/reportUtils';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -144,16 +144,17 @@ export default function ReportsPage() {
 
   const deleteFallaMutation = useMutation({
     mutationFn: async (fallaId: string) => {
-      const { error } = await supabase.from('fallas').update({ deleted_at: new Date().toISOString() }).eq('id', fallaId);
-      if (error) throw error;
+      await deleteFalla(fallaId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fallas_reports'] });
+      queryClient.invalidateQueries({ queryKey: ['fallas'] });
       showToast('Reporte eliminado correctamente', 'success');
       setFallaToDelete(null);
     },
-    onError: () => {
-      showToast('Error al eliminar el reporte', 'error');
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : 'Error al eliminar el reporte';
+      showToast(message, 'error');
     },
   });
 
