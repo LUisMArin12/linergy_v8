@@ -25,11 +25,12 @@ export default function LoginPage() {
     try {
       if (isLogin) {
         await signIn(formData.email, formData.password);
-        navigate('/dashboard/mapa', { state: { fromLogin: true } });
+        showToast('Inicio de sesión exitoso', 'success');
+        navigate('/dashboard/mapa');
       } else {
         await signUp(formData.email, formData.password);
         showToast('Cuenta creada exitosamente', 'success');
-        navigate('/dashboard/mapa', { state: { fromLogin: true } });
+        navigate('/dashboard/mapa');
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error en la autenticación';

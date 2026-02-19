@@ -2,17 +2,15 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
-import { useSearchParams, useLocation } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import MapFilters, { FilterState } from '../components/map/MapFilters';
 import ItemsList from '../components/map/ItemsList';
 import LeafletMap from '../components/map/LeafletMap';
 import MapLegend from '../components/map/MapLegend';
 import DetailPanel from '../components/map/DetailPanel';
 import FocusToolbar from '../components/map/FocusToolbar';
-import WelcomeMessage from '../components/ui/WelcomeMessage';
 import { supabase, Linea, Estructura, Falla } from '../lib/supabase';
 import { useSearch } from '../contexts/SearchContext';
-import { useAuth } from '../contexts/AuthContext';
 
 type DecodedState = {
   filtros?: Partial<FilterState>;
@@ -40,9 +38,6 @@ function safeDecodeState(stateParam: string | null): DecodedState | null {
 export default function MapPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { searchQuery } = useSearch();
-  const { profile } = useAuth();
-  const location = useLocation();
-  const [showWelcome, setShowWelcome] = useState(false);
 
   // ✅ Soporta params nuevos y legacy
   const focusedLineId = searchParams.get('lineId') ?? searchParams.get('lineaId');
@@ -100,13 +95,6 @@ export default function MapPage() {
     if (decodedState?.vista) return decodedState.vista;
     return { center: [24.0277, -104.6532], zoom: 10 };
   });
-
-  useEffect(() => {
-    if (location.state?.fromLogin) {
-      setShowWelcome(true);
-      window.history.replaceState({}, document.title);
-    }
-  }, [location]);
 
   const { data: allLineas = [], error: lineasError, isLoading: lineasLoading } = useQuery({
     queryKey: ['lineas'],
@@ -290,11 +278,8 @@ export default function MapPage() {
   }
 
   return (
-    <>
-      {showWelcome && <WelcomeMessage userName={profile?.email?.split('@')[0]} />}
-
-      {/* ✅ dvh: evita cortes por barras del navegador en iOS/Android */}
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-[calc(100dvh-8rem)] min-h-0">
+    // ✅ dvh: evita cortes por barras del navegador en iOS/Android
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-[calc(100dvh-8rem)] min-h-0">
       {/* Panel izquierdo */}
       <div className="w-full lg:w-80 flex flex-col min-h-0">
         {/* ✅ Scroll único para: filtros + resultados (sin scroll anidado) */}
@@ -356,7 +341,6 @@ export default function MapPage() {
           />
         )}
       </AnimatePresence>
-      </div>
-    </>
+    </div>
   );
 }
