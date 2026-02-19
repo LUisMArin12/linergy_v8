@@ -131,25 +131,6 @@ export default function WelcomePage() {
               </Button>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1, duration: 0.6 }}
-              className="bg-white/60 backdrop-blur-sm rounded-xl p-5 border border-[#E5E7EB] shadow-md"
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-1 h-full bg-gradient-to-b from-[#157A5A] to-[#0B3D2E] rounded-full" />
-                <div>
-                  <p className="text-sm font-medium text-[#111827] mb-1.5">
-                    Bienvenido al sistema LINERGY
-                  </p>
-                  <p className="text-xs text-[#6B7280] leading-relaxed">
-                    Gestiona líneas de subtransmisión, registra fallas y monitorea la infraestructura
-                    eléctrica en tiempo real. Inicia sesión para acceder a todas las funcionalidades.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
           </motion.div>
 
           <motion.div
