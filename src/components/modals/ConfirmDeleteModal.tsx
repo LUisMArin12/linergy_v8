@@ -24,13 +24,17 @@ export default function ConfirmDeleteModal({
 
   if (!isAdmin) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Acceso Denegado" size="md">
-        <div className="text-center py-6">
-          <p className="text-[#6B7280] mb-4">
+      <Modal isOpen={isOpen} onClose={onClose} title="" size="sm">
+        <div className="text-center py-4">
+          <div className="w-12 h-12 rounded-full bg-amber-100 mx-auto mb-3 flex items-center justify-center">
+            <AlertTriangle className="w-5 h-5 text-amber-600" strokeWidth={2} />
+          </div>
+          <h3 className="text-base font-semibold text-[#111827] mb-1.5">Acceso Denegado</h3>
+          <p className="text-sm text-[#6B7280] mb-5">
             Solo los administradores pueden eliminar elementos.
           </p>
-          <Button variant="secondary" onClick={onClose}>
-            Cerrar
+          <Button variant="secondary" onClick={onClose} className="w-full">
+            Entendido
           </Button>
         </div>
       </Modal>
@@ -38,24 +42,21 @@ export default function ConfirmDeleteModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} size="md">
-      <div className="space-y-6">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-            <AlertTriangle className="w-6 h-6 text-red-600" />
-          </div>
-          <div className="flex-1">
-            <p className="text-[#111827] leading-relaxed">{message}</p>
-          </div>
+    <Modal isOpen={isOpen} onClose={onClose} title="" size="sm">
+      <div className="text-center py-4">
+        <div className="w-12 h-12 rounded-full bg-rose-100 mx-auto mb-3 flex items-center justify-center">
+          <AlertTriangle className="w-5 h-5 text-rose-600" strokeWidth={2} />
         </div>
+        <h3 className="text-base font-semibold text-[#111827] mb-1.5">{title}</h3>
+        <p className="text-sm text-[#6B7280] mb-5">{message}</p>
 
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-sm text-red-800 font-medium">
-            Esta acción no se puede deshacer
+        <div className="bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 mb-5">
+          <p className="text-xs text-rose-700 font-medium">
+            Esta acción es permanente
           </p>
         </div>
 
-        <div className="flex gap-3 pt-4">
+        <div className="flex gap-2.5">
           <Button
             variant="secondary"
             onClick={onClose}
@@ -67,7 +68,7 @@ export default function ConfirmDeleteModal({
           <Button
             variant="primary"
             onClick={onConfirm}
-            className="flex-1 bg-red-600 hover:bg-red-700 border-red-600"
+            className="flex-1 bg-rose-600 hover:bg-rose-700 border-rose-600"
             disabled={isDeleting}
           >
             {isDeleting ? 'Eliminando...' : 'Eliminar'}

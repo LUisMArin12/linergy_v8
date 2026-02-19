@@ -191,7 +191,7 @@ export async function computeFaultLocation(
 
   if (!response.ok) {
     const msg = await parseFetchError(response);
-    throw new Error(msg || 'Failed to compute location');
+    throw new Error(msg || 'No se pudo calcular la ubicación. Verifica el kilómetro ingresado');
   }
 
   const payload: unknown = await response.json();
@@ -260,7 +260,7 @@ export async function computeFaultLocation(
     if (Number.isFinite(lat3) && Number.isFinite(lon3)) return { lat: lat3, lon: lon3 };
   }
 
-  throw new Error(`compute-fault-location devolvió un formato inesperado: ${JSON.stringify(payload)}`);
+  throw new Error('El kilómetro ingresado está fuera del rango de la línea seleccionada');
 }
 
 export async function importKMZ(file: File) {
@@ -277,7 +277,7 @@ export async function importKMZ(file: File) {
 
   if (!response.ok) {
     const msg = await parseFetchError(response);
-    throw new Error(msg || 'Failed to import KMZ');
+    throw new Error(msg || 'Error al importar el archivo KMZ. Verifica el formato del archivo');
   }
 
   return response.json();

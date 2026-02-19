@@ -65,15 +65,15 @@ export default function EditFaultModal({ isOpen, onClose, falla }: EditFaultModa
 
   const updateFallaMutation = useMutation({
     mutationFn: async (data: EditFormData) => {
-      if (!data.lineaId) throw new Error('Selecciona una línea');
+      if (!data.lineaId) throw new Error('Selecciona una línea para continuar');
 
       const km = data.km === null ? null : Number(data.km);
       if (km === null || !Number.isFinite(km) || km < 0) {
-        throw new Error('KM inválido (debe ser >= 0)');
+        throw new Error('Ingresa un kilómetro válido (debe ser mayor o igual a 0)');
       }
 
       const tipo = data.tipo.trim();
-      if (!tipo) throw new Error('Escribe el tipo de falla');
+      if (!tipo) throw new Error('Indica el tipo de falla');
 
       await updateFalla(falla.id, {
         lineaId: data.lineaId,

@@ -101,19 +101,19 @@ export default function RegisterFaultModal() {
 
   const createFallaMutation = useMutation({
     mutationFn: async (data: FaultFormData) => {
-      if (!data.lineaId) throw new Error('Selecciona una línea');
+      if (!data.lineaId) throw new Error('Selecciona una línea para continuar');
 
       if (lineas.length === 0) {
-        throw new Error('No hay líneas disponibles. Por favor, importa líneas primero desde el panel de administración.');
+        throw new Error('No hay líneas disponibles. Importa líneas desde el panel de administración');
       }
 
       const km = data.km === null ? null : Number(data.km);
       if (km === null || !Number.isFinite(km) || km < 0) {
-        throw new Error('KM inválido (debe ser >= 0)');
+        throw new Error('Ingresa un kilómetro válido (debe ser mayor o igual a 0)');
       }
 
       const tipo = data.tipo.trim();
-      if (!tipo) throw new Error('Escribe el tipo de falla');
+      if (!tipo) throw new Error('Indica el tipo de falla');
 
       let location: { lat: number; lon: number };
       try {
@@ -126,7 +126,7 @@ export default function RegisterFaultModal() {
       const lat = Number(location.lat);
       const lon = Number(location.lon);
       if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-        throw new Error(`Ubicación inválida (lat/lon): lat=${String(location.lat)} lon=${String(location.lon)}`);
+        throw new Error('No se pudo calcular la ubicación. Verifica el kilómetro ingresado');
       }
 
       const geomWkt = `POINT(${lon} ${lat})`;
@@ -143,7 +143,7 @@ export default function RegisterFaultModal() {
       });
 
       if (!fallaArray || fallaArray.length === 0) {
-        throw new Error('No se pudo crear la falla');
+        throw new Error('Error al registrar la falla. Intenta nuevamente');
       }
 
       // ✅ Garantiza info de línea aunque no haya cargado el select
