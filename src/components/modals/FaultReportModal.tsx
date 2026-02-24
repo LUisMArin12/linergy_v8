@@ -142,7 +142,7 @@ export default function FaultReportModal({ isOpen, onClose, faultData }: FaultRe
     // Adaptamos el shape del modal al esperado por generateFaultPDF(falla, linea)
     const falla: FaultForReport = {
       id: faultData.fallaId,
-      ocurrencia_ts: new Date(faultData.fecha).toISOString(),
+      ocurrencia_ts: new Date(`${faultData.fecha}T${faultData.hora}`).toISOString(),
       km: faultData.km,
       tipo: faultData.tipo,
       descripcion: faultData.descripcion,
