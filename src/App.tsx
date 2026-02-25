@@ -9,6 +9,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 
 const MapPage = lazy(() => import('./pages/MapPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const FallasPage = lazy(() => import('./pages/FallasPage'));
 const AdminLinesPage = lazy(() => import('./pages/AdminLinesPage'));
 const AdminImportPage = lazy(() => import('./pages/AdminImportPage'));
 const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
@@ -47,6 +48,7 @@ export default function App() {
                 <Route index element={<Navigate to="/dashboard/mapa" replace />} />
                 <Route path="mapa" element={<MapPage />} />
                 <Route path="reportes" element={<ReportsPage />} />
+                <Route path="fallas" element={<FallasPage />} />
                 <Route path="info-lineas" element={<InfoLineasPage />} />
                 <Route
                   path="admin/lineas"

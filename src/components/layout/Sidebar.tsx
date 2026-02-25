@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Map, FileText, Info, Cable, UploadCloud, LogOut, X, Users } from 'lucide-react';
+import { Map, FileText, Info, Cable, UploadCloud, LogOut, X, Users, AlertTriangle } from 'lucide-react';
 import clsx from 'clsx';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -18,6 +18,7 @@ const menuItems = [
     items: [
       { to: '/dashboard/mapa', icon: Map, label: 'Mapa', adminOnly: false },
       { to: '/dashboard/reportes', icon: FileText, label: 'Reportes', adminOnly: false },
+      { to: '/dashboard/fallas', icon: AlertTriangle, label: 'Fallas', adminOnly: false },
     ],
   },
   {
