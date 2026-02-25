@@ -11,7 +11,6 @@ import Badge from '../components/ui/Badge';
 import Card from '../components/ui/Card';
 import EditFaultModal from '../components/modals/EditFaultModal';
 import ConfirmDeleteModal from '../components/modals/ConfirmDeleteModal';
-import { useMapFocus } from '../contexts/MapFocusContext';
 import { useNavigate } from 'react-router-dom';
 
 type FilterEstado = 'TODAS' | 'ABIERTA' | 'EN_ATENCION' | 'CERRADA';
@@ -20,7 +19,6 @@ export default function FallasPage() {
   const { showToast } = useToast();
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
-  const { focusOnItem } = useMapFocus();
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -101,21 +99,7 @@ export default function FallasPage() {
   };
 
   const handleViewOnMap = (falla: Falla & { lineas: { numero: string; nombre: string | null } }) => {
-    focusOnItem({
-      type: 'falla',
-      id: falla.id,
-      linea_id: falla.linea_id,
-      km: falla.km,
-      tipo: falla.tipo,
-      descripcion: falla.descripcion,
-      estado: falla.estado,
-      ocurrencia_ts: falla.ocurrencia_ts,
-      geom: falla.geom,
-      created_at: falla.created_at,
-      updated_at: falla.updated_at,
-      lineas: falla.lineas,
-    });
-    navigate('/mapa');
+    navigate(`/dashboard/mapa?faultId=${falla.id}`);
   };
 
   const getEstadoBadgeVariant = (estado: string) => {
