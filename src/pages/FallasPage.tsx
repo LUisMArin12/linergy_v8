@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, Filter, Edit2, Trash2, MapPin, AlertCircle, Calendar, FileText, X } from 'lucide-react';
 import { supabase, Falla } from '../lib/supabase';
+import { handleAuthError } from '../lib/authErrorHandler';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/ui/Button';
@@ -49,12 +50,21 @@ export default function FallasPage() {
 
   const deleteFallaMutation = useMutation({
     mutationFn: async (fallaId: string) => {
-      const { error } = await supabase
-        .from('fallas')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', fallaId);
+      try {
+        const { error } = await supabase
+          .from('fallas')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', fallaId);
 
-      if (error) throw error;
+        if (error) {
+          console.error('Error al eliminar falla:', error);
+          await handleAuthError(error);
+          throw error;
+        }
+      } catch (error) {
+        await handleAuthError(error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-fallas'] });
@@ -64,6 +74,7 @@ export default function FallasPage() {
       setSelectedFalla(null);
     },
     onError: (error) => {
+      console.error('Error en deleteFallaMutation:', error);
       const msg = error instanceof Error ? error.message : 'Error al eliminar la falla';
       showToast(msg, 'error');
     },
